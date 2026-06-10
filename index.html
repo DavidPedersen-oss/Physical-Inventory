@@ -998,7 +998,7 @@ async function flushSave() {
   if (!rows.length || !WEB_APP_URL) return;
   showToast('Saving…','info');
   const ok = await sheetsWrite(rows);
-  showToast(ok ? 'Saved ✓' : 'Save failed', ok?'ok':'err', ok?2000:4000);
+  showToast(ok ? 'Saved ✓' : 'Save failed — check Apps Script URL', ok?'ok':'err', ok?2000:4000);
 }
 function saveAsset(id) {
   const r = RAW_DATA[id];
@@ -1053,23 +1053,57 @@ async function testConnection() {
   const webUrl  = document.getElementById('setup-web-url').value.trim();
   const statusEl = document.getElementById('conn-status');
 
-  if (!sheetId || !apiKey) {
-    statusEl.innerHTML = '<span class="dot-status err"></span> Enter Sheet ID and API Key first.';
-    return;
-  }
   statusEl.innerHTML = '<span class="dot-status pending"></span> Testing…';
 
-  try {
-    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/AuditProgress!A1?key=${apiKey}`);
-    if (r.ok) {
-      statusEl.innerHTML = '<span class="dot-status ok"></span> Read access confirmed ✓';
-    } else {
-      const err = await r.json();
-      statusEl.innerHTML = `<span class="dot-status err"></span> Error: ${err.error?.message||r.status}`;
+  let readOk = false, writeOk = false, readErr = '', writeErr = '';
+
+  // Test read (API key + Sheet ID)
+  if (!sheetId || !apiKey) {
+    readErr = 'Sheet ID and API Key required';
+  } else {
+    try {
+      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/AuditProgress!A1?key=${apiKey}`);
+      if (r.ok) {
+        readOk = true;
+      } else {
+        const err = await r.json();
+        readErr = err.error?.message || ('HTTP ' + r.status);
+      }
+    } catch(e) {
+      readErr = 'Network error';
     }
-  } catch(e) {
-    statusEl.innerHTML = `<span class="dot-status err"></span> Network error — check your connection.`;
   }
+
+  // Test write (Apps Script URL) - send a test ping
+  if (!webUrl) {
+    writeErr = 'No Apps Script URL entered';
+  } else {
+    try {
+      const r = await fetch(webUrl, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({rows:[], _test: true})
+      });
+      if (r.ok) {
+        writeOk = true;
+      } else {
+        writeErr = 'HTTP ' + r.status;
+      }
+    } catch(e) {
+      writeErr = 'Could not reach Apps Script URL — check URL and deployment settings';
+    }
+  }
+
+  let html = '';
+  html += `<div><span class="dot-status ${readOk?'ok':'err'}"></span> Read (API Key): ${readOk ? '✓ OK' : '✗ ' + readErr}</div>`;
+  html += `<div style="margin-top:4px;"><span class="dot-status ${writeOk?'ok':'err'}"></span> Write (Apps Script): ${writeOk ? '✓ OK' : '✗ ' + writeErr}</div>`;
+  if (writeErr && writeErr.includes('Apps Script')) {
+    html += `<div style="margin-top:6px;font-size:11px;color:var(--text3);">
+      💡 Make sure the Apps Script is deployed as a Web App with <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong>.
+      After any code change you must create a <strong>New Deployment</strong> (not edit existing).
+    </div>`;
+  }
+  statusEl.innerHTML = html;
 }
 
 function showSetupModal() {
@@ -1081,23 +1115,46 @@ function showSetupModal() {
   overlay.className = 'modal-overlay';
 
   const APPS_SCRIPT = `function doPost(e) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('AuditProgress');
-  const data = JSON.parse(e.postData.contents);
-  const rows = data.rows;
-  const existing = sheet.getDataRange().getValues();
-  const rowIndex = {};
-  existing.forEach((row,i) => { if(i>0) rowIndex[row[0]] = i+1; });
-  const COLS = ['assetId','tagNumber','dept','status','notes','editedTag','editedLocation','editedCustodian','editedSerialId','editedDescription','lastUpdated'];
-  rows.forEach(row => {
-    const vals = COLS.map(c => row[c]??'');
-    const ei = rowIndex[row.assetId];
-    if(ei) sheet.getRange(ei,1,1,vals.length).setValues([vals]);
-    else { sheet.appendRow(vals); rowIndex[row.assetId]=sheet.getLastRow(); }
-  });
-  return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON);
+  try {
+    var data = JSON.parse(e.postData.contents);
+    // Handle test ping
+    if (data._test) {
+      return ContentService.createTextOutput(JSON.stringify({status:'ok',test:true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var rows = data.rows || [];
+    if (rows.length === 0) {
+      return ContentService.createTextOutput(JSON.stringify({status:'ok',updated:0}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('AuditProgress');
+    var existing = sheet.getDataRange().getValues();
+    var rowIndex = {};
+    existing.forEach(function(row,i){ if(i>0 && row[0]) rowIndex[row[0]] = i+1; });
+    var COLS = ['assetId','tagNumber','dept','status','notes','editedTag',
+                'editedLocation','editedCustodian','editedSerialId','editedDescription','lastUpdated'];
+    rows.forEach(function(row) {
+      var vals = COLS.map(function(c){ return row[c] !== undefined ? row[c] : ''; });
+      var ei = rowIndex[row.assetId];
+      if (ei) {
+        sheet.getRange(ei, 1, 1, vals.length).setValues([vals]);
+      } else {
+        sheet.appendRow(vals);
+        rowIndex[row.assetId] = sheet.getLastRow();
+      }
+    });
+    return ContentService.createTextOutput(JSON.stringify({status:'ok',updated:rows.length}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({status:'error',message:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
-function doGet(e) { return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT); }`;
+function doGet(e) {
+  return ContentService.createTextOutput('PI Audit - write endpoint active')
+    .setMimeType(ContentService.MimeType.TEXT);
+}`;
 
   overlay.innerHTML = `
   <div class="modal" style="max-width:580px;">
