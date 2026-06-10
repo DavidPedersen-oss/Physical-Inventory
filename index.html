@@ -633,7 +633,7 @@ function renderMain() {
   // Filter + sort bar
   html += `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
     <div class="filter-bar" style="flex:1;margin-bottom:0;">`;
-  [['all','All'],[`unreviewed','Unreviewed'],['ok','✓ OK'],['missing','Not Found'],['wrong_location','Wrong Loc'],['damaged','Damaged'],['other','Other']].forEach(([f,lbl]) => {
+  [['all','All'],['unreviewed','Unreviewed'],['ok','✓ OK'],['missing','Not Found'],['wrong_location','Wrong Loc'],['damaged','Damaged'],['other','Other']].forEach(([f,lbl]) => {
     html += `<button class="filter-chip${filterStatus===f?' active':''}" data-filter="${f}">${lbl}</button>`;
   });
   html += `</div>
@@ -761,7 +761,7 @@ function renderAssetTable(assets) {
     h += `<tr data-asset-id="${r.id}" style="border-left:3px solid ${stColor};">
       <td class="tag-cell" style="color:${tagChanged?'var(--amber)':'var(--text)'};">${tag}</td>
       <td style="max-width:260px;">${merged.description||'—'}</td>
-      <td>${merged.location||<span style="color:var(--text4)">—</span>}</td>
+      <td style="color:var(--text2)">${merged.location||'—'}</td>
       <td>${merged.custodian?merged.custodian.split(',').reverse().join(' '):'—'}</td>
       <td style="font-family:monospace;font-size:11px;">${merged.serialId||'—'}</td>
       <td style="color:var(--green);font-weight:600;text-align:right;">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</td>
