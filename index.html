@@ -13,10 +13,10 @@
   --accent:#0ea5e9;--accent2:#38bdf8;--brand:#003087;
   --green:#22c55e;--green2:#4ade80;--amber:#fbbf24;
   --red:#ef4444;--orange:#f97316;--purple:#8b5cf6;
-  --sidebar-w:280px;--header-h:56px;
+  --sidebar-w:300px;--header-h:56px;
 }
 [data-theme="light"]{
-  --bg:#f8fafc;--bg2:#ffffff;--bg3:#e2e8f0;--border:#cbd5e1;
+  --bg:#f1f5f9;--bg2:#ffffff;--bg3:#e2e8f0;--border:#cbd5e1;
   --text:#0f172a;--text2:#334155;--text3:#64748b;--text4:#94a3b8;
   --accent:#0284c7;--accent2:#0369a1;
 }
@@ -27,61 +27,120 @@ textarea{resize:vertical}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── LAYOUT ── */
 #shell{display:flex;height:100vh;overflow:hidden}
 #sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:30;transition:transform .25s}
 #sidebar-header{height:var(--header-h);display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--border);flex-shrink:0}
 #dept-list-wrap{flex:1;overflow-y:auto;padding:6px 8px 16px}
 #sidebar-footer{padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-#topbar{height:var(--header-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 14px;flex-shrink:0}
+#topbar{height:var(--header-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 16px;flex-shrink:0}
 #content{flex:1;overflow-y:auto}
-#content-inner{max-width:960px;margin:0 auto;padding:16px}
+#content-inner{max-width:1200px;margin:0 auto;padding:20px 24px}
 #cfg-banner{background:color-mix(in srgb,var(--amber) 15%,var(--bg2));border-bottom:2px solid var(--amber);padding:8px 16px;display:none;font-size:12px;font-weight:600;color:var(--amber);text-align:center;cursor:pointer;flex-shrink:0}
-@media(max-width:768px){
+
+/* ── MOBILE ── */
+@media(max-width:900px){
   #sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);box-shadow:4px 0 24px rgba(0,0,0,.4)}
   #sidebar.open{transform:translateX(0)}
   #sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:29}
   #sidebar-overlay.open{display:block}
   #menu-btn{display:flex!important}
-  #content-inner{padding:10px}
+  #content-inner{padding:12px}
 }
-@media(min-width:769px){#menu-btn{display:none!important}}
+@media(min-width:901px){#menu-btn{display:none!important}}
+
+/* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);transition:background .12s,color .12s;white-space:nowrap}
 .btn:hover{background:var(--bg3);color:var(--text)}
 .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn.primary:hover{filter:brightness(1.1)}
+.btn.success{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.success:hover{filter:brightness(1.1)}
 .btn.ghost{border-color:transparent}
 .btn.ghost:hover{background:var(--bg3)}
 .btn.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)}
 .btn.danger:hover{background:color-mix(in srgb,var(--red) 10%,transparent)}
-.btn.sm{padding:4px 10px;font-size:11px;border-radius:5px}
-.btn.icon{padding:7px}
+.btn.sm{padding:5px 11px;font-size:12px;border-radius:6px}
+.btn.xs{padding:3px 8px;font-size:11px;border-radius:5px}
+.btn.icon{padding:7px;border-radius:7px}
+
+/* ── CARDS / MISC ── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.card-body{padding:14px 16px}
+.card-body{padding:14px 18px}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
 .input{width:100%;padding:9px 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none;transition:border-color .15s}
 .input:focus{border-color:var(--accent)}
 .label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block;font-weight:600}
 .pbar-wrap{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
 .pbar-fill{height:4px;border-radius:2px;transition:width .4s}
+
+/* ── SIDEBAR DEPTS ── */
 .dept-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .12s;border:none;background:transparent;width:100%;text-align:left;color:var(--text)}
 .dept-item:hover{background:var(--bg3)}
 .dept-item.active{background:color-mix(in srgb,var(--accent) 15%,transparent)}
 .div-header{font-size:9px;font-weight:800;color:var(--text4);letter-spacing:1.5px;text-transform:uppercase;padding:12px 10px 4px}
-.asset-table{width:100%;border-collapse:collapse}
-.asset-table th{padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--bg2);position:sticky;top:0;z-index:2;cursor:pointer;user-select:none}
+
+/* ── DEPT HEADER CARD ── */
+.dept-header-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.dept-stats{display:flex;gap:12px;flex-shrink:0}
+.stat-pill{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 16px;text-align:center;min-width:64px}
+.stat-pill .num{font-size:22px;font-weight:800;line-height:1}
+.stat-pill .lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+
+/* ── FILTER / SORT BAR ── */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px}
+.filter-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);transition:all .12s;white-space:nowrap}
+.filter-chip:hover{border-color:var(--text4);color:var(--text2)}
+.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sort-chip{padding:4px 9px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-size:11px;font-weight:600;color:var(--text4);transition:all .12s}
+.sort-chip:hover{color:var(--text2)}
+.sort-chip.active{background:var(--bg3);color:var(--accent)}
+.toolbar-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+.view-toggle{display:flex;background:var(--bg3);border-radius:7px;padding:2px;gap:2px}
+.view-toggle button{padding:5px 11px;border-radius:5px;border:none;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);transition:all .12s}
+.view-toggle button.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+
+/* ── BULK ACTION BAR ── */
+#bulk-bar{display:none;position:sticky;bottom:0;left:0;right:0;background:var(--bg2);border-top:2px solid var(--accent);padding:10px 16px;z-index:10;align-items:center;gap:10px;box-shadow:0 -4px 16px rgba(0,0,0,.2)}
+#bulk-bar.show{display:flex}
+
+/* ── CHECKBOX ── */
+.cb-wrap{display:flex;align-items:center;justify-content:center;padding:0 8px 0 4px;flex-shrink:0;cursor:pointer}
+.cb{width:17px;height:17px;border-radius:4px;border:2px solid var(--border);background:var(--bg);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.cb.checked{background:var(--accent);border-color:var(--accent)}
+.cb.checked::after{content:'✓';color:#fff;font-size:11px;font-weight:800;line-height:1}
+.cb.indeterminate{background:var(--accent);border-color:var(--accent)}
+.cb.indeterminate::after{content:'—';color:#fff;font-size:10px;font-weight:800;line-height:1}
+
+/* ── ASSET TABLE ── */
+.asset-table{width:100%;border-collapse:collapse;font-size:13px}
+.asset-table thead{position:sticky;top:0;z-index:3}
+.asset-table th{padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--bg2);cursor:pointer;user-select:none}
 .asset-table th:hover{color:var(--text)}
-.asset-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
-.asset-table tr{cursor:pointer;transition:background .1s}
-.asset-table tbody tr:hover{background:color-mix(in srgb,var(--bg3) 50%,transparent)}
-.asset-card{display:flex;align-items:stretch;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px;cursor:pointer;transition:border-color .12s}
+.asset-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.asset-table tbody tr{cursor:pointer;transition:background .1s}
+.asset-table tbody tr:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.asset-table tbody tr.selected{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.asset-table .tag-cell{font-weight:700;font-family:monospace;font-size:12px}
+.asset-table .desc-cell{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asset-table .amt-cell{text-align:right;font-weight:600;color:var(--green);white-space:nowrap}
+.table-wrap{border-radius:10px;border:1px solid var(--border);overflow:hidden}
+.table-scroll{overflow-x:auto}
+
+/* ── ASSET CARD ── */
+.asset-card{display:flex;align-items:stretch;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:6px;transition:border-color .12s}
 .asset-card:hover{border-color:color-mix(in srgb,var(--accent) 60%,transparent)}
+.asset-card.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--bg2))}
 .status-bar{width:4px;flex-shrink:0}
-.card-content{flex:1;padding:10px 12px;min-width:0}
+.card-content{flex:1;padding:10px 12px;min-width:0;cursor:pointer}
 .card-title{font-weight:600;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px}
 .card-meta{display:flex;gap:8px;font-size:11px;color:var(--text3);flex-wrap:wrap;align-items:center}
 .quick-ok{padding:0 14px;background:none;border:none;border-left:1px solid var(--border);color:var(--text4);cursor:pointer;font-size:20px;flex-shrink:0;transition:color .12s}
 .quick-ok:hover{color:var(--green)}
+
+/* ── DETAIL PANEL ── */
 .detail-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
 .detail-section h3{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
 .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -90,36 +149,31 @@ textarea{resize:vertical}
 .status-btn:hover{border-color:var(--text4);color:var(--text2)}
 .status-btn.active{color:var(--sc)!important;border-color:var(--sc)!important;background:color-mix(in srgb,var(--sc) 12%,transparent)}
 .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.filter-chip{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:11px;font-weight:600;color:var(--text3);transition:all .12s;white-space:nowrap}
-.filter-chip:hover{border-color:var(--text4);color:var(--text2)}
-.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.sort-chip{padding:3px 8px;border-radius:5px;border:none;background:transparent;cursor:pointer;font-size:11px;font-weight:600;color:var(--text4);transition:all .12s}
-.sort-chip:hover{color:var(--text2)}
-.sort-chip.active{background:var(--bg3);color:var(--accent)}
-.view-toggle{display:flex;background:var(--bg3);border-radius:7px;padding:2px;gap:2px}
-.view-toggle button{padding:5px 10px;border-radius:5px;border:none;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);transition:all .12s}
-.view-toggle button.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3)}
-#toast.show{opacity:1}
-#toast.ok{border-color:var(--green);color:var(--green2)}
-#toast.err{border-color:var(--red);color:#f87171}
-#toast.info{border-color:var(--accent);color:var(--accent2)}
+
+/* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto}
 .modal h2{font-size:18px;font-weight:700;margin-bottom:4px}
 .modal .sub{font-size:12px;color:var(--text3);margin-bottom:20px}
-.modal-footer{display:flex;gap:8px;margin-top:20px}
-.setup-step{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--border)}
+.modal-footer{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+.setup-step{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-bottom:1px solid var(--border)}
 .setup-step:last-child{border-bottom:none}
-.step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
 .step-num.done{background:var(--green)}
-.setup-step h4{font-size:13px;font-weight:700;margin-bottom:3px}
-.setup-step p{font-size:12px;color:var(--text3);line-height:1.5}
-.copy-block{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;font-family:monospace;color:var(--text2);margin-top:6px;cursor:pointer;white-space:pre-wrap;word-break:break-all;max-height:100px;overflow:hidden}
+.setup-step h4{font-size:13px;font-weight:700;margin-bottom:4px}
+.setup-step p{font-size:12px;color:var(--text3);line-height:1.6}
+.copy-block{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;font-family:monospace;color:var(--text2);margin-top:6px;cursor:pointer;white-space:pre-wrap;word-break:break-all;max-height:90px;overflow:hidden}
 .copy-block:hover{border-color:var(--accent)}
 .conn-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:4px}
 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--text4)}
-.dot.ok{background:var(--green)} .dot.err{background:var(--red)} .dot.pending{background:var(--amber)}
+.dot.ok{background:var(--green)}.dot.err{background:var(--red)}.dot.pending{background:var(--amber)}
+
+/* ── STATS CARDS ── */
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center}
+.stat-num{font-size:26px;font-weight:800;color:var(--accent2);line-height:1}
+.stat-label{font-size:10px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:200}
 .login-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 32px;width:100%;max-width:380px}
 .login-logo{text-align:center;margin-bottom:28px}
@@ -127,10 +181,20 @@ textarea{resize:vertical}
 .login-logo h1{font-size:20px;font-weight:700;margin-bottom:4px}
 .login-logo p{font-size:12px;color:var(--text3)}
 #login-err{color:#f87171;font-size:13px;text-align:center;min-height:18px;margin-bottom:8px}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
-.stat-num{font-size:28px;font-weight:800;color:var(--accent2);line-height:1}
-.stat-label{font-size:11px;color:var(--text3);margin-top:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.search-highlight{background:color-mix(in srgb,var(--amber) 35%,transparent);border-radius:2px;font-weight:700}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+#toast.show{opacity:1}
+#toast.ok{border-color:var(--green);color:var(--green2)}
+#toast.err{border-color:var(--red);color:#f87171}
+#toast.info{border-color:var(--accent);color:var(--accent2)}
+
+/* ── SEARCH HIGHLIGHT ── */
+.hl{background:color-mix(in srgb,var(--amber) 35%,transparent);border-radius:2px;font-weight:700}
+
+/* ── IMPORT DROP ── */
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -140,50 +204,67 @@ textarea{resize:vertical}
   <div id="sidebar-overlay" onclick="closeSidebar()"></div>
   <aside id="sidebar">
     <div id="sidebar-header">
-      <div style="background:var(--brand);color:#fff;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;" onclick="showSetup()">CSULB</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;">PI Audit</div>
-        <div style="font-size:10px;color:var(--text3);">FY 2025–26</div>
+      <div style="background:var(--brand);color:#fff;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;flex-shrink:0" onclick="showSetup()">CSULB</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">PI Audit</div>
+        <div style="font-size:10px;color:var(--text3)">FY 2025–26</div>
       </div>
     </div>
-    <div style="padding:6px 8px 4px;">
-      <input class="input" id="dept-search" placeholder="Search departments…" style="font-size:12px;padding:7px 10px;" oninput="renderSidebar()">
+    <div style="padding:8px 8px 4px">
+      <input class="input" id="dept-search" placeholder="Search departments…" style="font-size:12px;padding:7px 10px" oninput="renderSidebar()">
     </div>
     <div id="dept-list-wrap"></div>
     <div id="sidebar-footer">
-      <div style="margin-bottom:8px;">
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:3px;">
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:3px">
           <span>Overall Progress</span><span id="global-pct-label">0%</span>
         </div>
         <div class="pbar-wrap"><div class="pbar-fill" id="global-pbar" style="background:var(--accent);width:0%"></div></div>
-        <div style="font-size:10px;color:var(--text4);margin-top:2px;" id="global-asset-label">0 / 0 assets</div>
+        <div style="font-size:10px;color:var(--text4);margin-top:2px" id="global-asset-label">0 / 0 assets</div>
       </div>
-      <div style="display:flex;gap:4px;">
-        <button class="btn sm ghost" style="flex:1;" onclick="showStats()">📊 Stats</button>
-        <button class="btn sm ghost" style="flex:1;" onclick="showImport()">⬆ Import</button>
-        <button class="btn sm ghost" style="flex:1;" onclick="syncAll()">↻ Sync</button>
+      <div style="display:flex;gap:4px">
+        <button class="btn xs ghost" style="flex:1" onclick="showStats()">📊 Stats</button>
+        <button class="btn xs ghost" style="flex:1" onclick="showImport()">⬆ Import</button>
+        <button class="btn xs ghost" style="flex:1" onclick="syncAll()">↻ Sync</button>
       </div>
     </div>
   </aside>
+
   <div id="main">
     <div id="cfg-banner" onclick="showSetup()">⚠ Google Sheets not connected — progress won't save. Tap to set up →</div>
     <div id="topbar">
       <button class="btn icon ghost" id="menu-btn" onclick="toggleSidebar()" style="display:none">☰</button>
-      <div style="flex:1;min-width:0;position:relative;">
-        <input id="global-search" class="input" placeholder="🔍  Search tag #, description, serial, location…" style="padding-left:12px;font-size:13px;height:36px;" oninput="handleSearch(this.value)">
-        <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;">✕</button>
+      <div style="flex:1;min-width:0;position:relative">
+        <input id="global-search" class="input" placeholder="🔍  Search tag #, description, serial, location, custodian…" style="font-size:13px;height:36px" oninput="handleSearch(this.value)">
+        <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1">✕</button>
       </div>
-      <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
+      <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
         <div class="view-toggle" id="view-toggle">
-          <button id="vt-card" class="active" onclick="setViewMode('card')" title="Cards">⊞</button>
-          <button id="vt-table" onclick="setViewMode('table')" title="Table">☰</button>
+          <button id="vt-card" class="active" onclick="setViewMode('card')" title="Cards">⊞ Cards</button>
+          <button id="vt-table" onclick="setViewMode('table')" title="Table">☰ Table</button>
         </div>
         <button class="btn icon ghost" onclick="toggleTheme()" id="theme-btn" title="Theme">◑</button>
-        <button class="btn sm ghost" onclick="exportCSV()">Export</button>
+        <button class="btn sm ghost" onclick="exportCSV()">⬇ Export</button>
         <button class="btn icon ghost" onclick="showSetup()" title="Settings">⚙</button>
       </div>
     </div>
-    <div id="content"><div id="content-inner"><div id="main-view"></div></div></div>
+    <div id="content">
+      <div id="content-inner">
+        <div id="main-view"></div>
+      </div>
+    </div>
+    <!-- Bulk action bar -->
+    <div id="bulk-bar">
+      <span id="bulk-count" style="font-size:13px;font-weight:700;color:var(--text2);min-width:100px"></span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn sm success" onclick="bulkMarkOk()">✓ Mark Selected OK</button>
+        <button class="btn sm" onclick="bulkSetStatus('missing')">Not Found</button>
+        <button class="btn sm" onclick="bulkSetStatus('wrong_location')">Wrong Location</button>
+        <button class="btn sm" onclick="bulkSetStatus('damaged')">Damaged</button>
+        <button class="btn sm" onclick="bulkSetStatus('other')">Other</button>
+        <button class="btn sm ghost" onclick="clearSelection()">✕ Clear</button>
+      </div>
+    </div>
   </div>
 </div>
 <div id="toast"></div>
@@ -195,7 +276,7 @@ const TRACKER_DATA  = {"70":{"completed":true,"completedOn":"2025-10-22","perfor
 const INIT_STATUSES = {"479":"ok","480":"ok","2746":"ok","2747":"ok","2748":"ok","2678":"ok","2679":"ok","2680":"ok","2681":"ok","2682":"ok","2683":"ok","2684":"ok","2685":"ok","2686":"ok","2687":"ok","2688":"ok","2689":"ok","2690":"ok","2691":"ok","2692":"ok","3028":"ok","61":"ok","62":"ok","63":"ok","64":"ok","77":"ok","78":"ok","79":"ok","80":"ok","81":"ok","451":"ok","452":"ok","453":"ok","454":"ok","455":"ok","456":"ok","457":"ok","458":"ok","459":"ok","460":"ok","461":"ok","462":"ok","463":"ok","464":"ok","465":"ok","466":"ok","467":"ok","468":"ok","469":"ok","470":"ok","471":"ok","472":"ok","473":"ok","474":"ok","475":"ok","476":"ok","477":"ok","478":"ok","73":"ok","74":"ok","75":"ok","76":"ok","481":"ok","544":"ok","545":"ok","546":"ok","2749":"ok","2751":"ok","2752":"ok","2753":"ok","2754":"ok","2755":"ok","2756":"ok","2757":"ok","2758":"ok","2759":"ok","2760":"ok","2761":"ok","2762":"ok","2763":"ok","2764":"ok","2765":"ok","2780":"ok","2781":"ok","2782":"ok","2783":"ok","2784":"ok","2785":"ok","2786":"ok","2787":"ok","2788":"ok","2789":"ok","2790":"ok","2791":"ok","2792":"ok","2793":"ok","2794":"ok","2795":"ok","2796":"ok","2797":"ok","2798":"ok","2799":"ok","2800":"ok","2801":"ok","2802":"ok","2803":"ok","2804":"ok","2805":"ok","2950":"ok","2951":"ok","2952":"ok","2953":"ok","2954":"ok","2955":"ok","2956":"ok","2957":"ok","2958":"ok","65":"ok","66":"ok","67":"ok","68":"ok","69":"ok","70":"ok","71":"ok","72":"ok","139":"ok","2750":"ok","715":"ok","716":"ok","717":"ok","718":"ok","719":"ok","720":"ok","721":"ok","722":"ok","723":"ok","724":"ok","725":"ok","726":"ok","727":"ok","728":"ok","729":"ok","730":"ok","731":"ok","732":"ok","733":"ok","734":"ok","735":"ok","736":"ok","737":"ok","738":"ok","739":"ok","740":"ok","741":"ok","742":"ok","743":"ok","744":"ok","745":"ok","746":"ok","747":"ok","748":"ok","749":"ok","750":"ok","751":"ok","752":"ok","753":"ok","754":"ok","755":"ok","756":"ok","757":"ok","758":"ok","759":"ok","760":"ok","761":"ok","762":"ok","763":"ok","764":"ok","765":"ok","766":"ok","767":"ok","768":"ok","769":"ok","770":"ok","771":"ok","772":"ok","773":"ok","774":"ok","775":"ok","776":"ok","777":"ok","3713":"ok","3714":"ok","3715":"ok","3716":"ok","3717":"ok","3718":"ok","3719":"ok","3720":"ok","3721":"ok","3722":"ok","3723":"ok","3724":"ok","483":"ok","484":"ok","1395":"ok","3084":"ok","3027":"ok","3098":"ok","3099":"ok","3100":"ok","3101":"ok","3102":"ok","3103":"ok","3104":"ok","3105":"ok","3106":"ok","3107":"ok","3108":"ok","3109":"ok","3110":"ok","3111":"ok","3112":"ok","3113":"ok","3114":"ok","3115":"ok","3116":"ok","3117":"ok","3118":"ok","3119":"ok","3120":"ok","3121":"ok","3122":"ok","3123":"ok","3124":"ok","3125":"ok","3126":"ok","3127":"ok","3128":"ok","3129":"ok","3130":"ok","3131":"ok","3132":"ok","3133":"ok","3134":"ok","3135":"ok","3136":"ok","3137":"ok","3138":"ok","3139":"ok","3140":"ok","3141":"ok","3142":"ok","3143":"ok","3144":"ok","3145":"ok","3146":"ok","3147":"ok","3148":"ok","3149":"ok","3150":"ok","3151":"ok","3152":"ok","3153":"ok","3154":"ok","3155":"ok","3156":"ok","3157":"ok","3158":"ok","3159":"ok","3160":"ok","3161":"ok","3162":"ok","3163":"ok","3164":"ok","3165":"ok","3357":"ok","705":"ok","706":"ok","3358":"ok","3359":"ok","3360":"ok","3361":"ok","3362":"ok","3363":"ok","3364":"ok","573":"ok","574":"ok","575":"ok","576":"ok","577":"ok","578":"ok","579":"ok","580":"ok","581":"ok","582":"ok","583":"ok","584":"ok","585":"ok","586":"ok","587":"ok","588":"ok","589":"ok","590":"ok","591":"ok","592":"ok","593":"ok","594":"ok","595":"ok","596":"ok","597":"ok","598":"ok","599":"ok","600":"ok","601":"ok","602":"ok","603":"ok","604":"ok","605":"ok","606":"ok","607":"ok","608":"ok","609":"ok","610":"ok","611":"ok","612":"ok","613":"ok","614":"ok","615":"ok","616":"ok","617":"ok","618":"ok","619":"ok","620":"ok","621":"ok","622":"ok","623":"ok","624":"ok","625":"ok","626":"ok","627":"ok","628":"ok","629":"ok","630":"ok","631":"ok","632":"ok","633":"ok","634":"ok","635":"ok","636":"ok","637":"ok","638":"ok","639":"ok","640":"ok","641":"ok","642":"ok","643":"ok","644":"ok","645":"ok","646":"ok","647":"ok","648":"ok","649":"ok","547":"ok","548":"ok","549":"ok","550":"ok","551":"ok","552":"ok","553":"ok","554":"ok","555":"ok","556":"ok","557":"ok","558":"ok","559":"ok","560":"ok","561":"ok","562":"ok","563":"ok","564":"ok","565":"ok","566":"ok","567":"ok","568":"ok","569":"ok","570":"ok","571":"ok","572":"ok","650":"ok","651":"ok","652":"ok","653":"ok","654":"ok","655":"ok","656":"ok","657":"ok","658":"ok","659":"ok","660":"ok","661":"ok","662":"ok","663":"ok","664":"ok","665":"ok","666":"ok","667":"ok","668":"ok","669":"ok","670":"ok","671":"ok","672":"ok","673":"ok","674":"ok","675":"ok","676":"ok","677":"ok","678":"ok","679":"ok","680":"ok","681":"ok","682":"ok","683":"ok","684":"ok","685":"ok","686":"ok","687":"ok","688":"ok","689":"ok","690":"ok","691":"ok","692":"ok","693":"ok","694":"ok","695":"ok","696":"ok","697":"ok","698":"ok","699":"ok","700":"ok","701":"ok","702":"ok","703":"ok","704":"ok","707":"ok","708":"ok","709":"ok","710":"ok","711":"ok","712":"ok","713":"ok","714":"ok","3067":"ok","84":"ok","138":"ok","3090":"ok","3353":"ok","3354":"ok","3355":"ok","3356":"ok","140":"ok","488":"ok","1650":"ok","1651":"ok","1652":"ok","1945":"ok","1946":"ok","2471":"ok","2472":"ok","2473":"ok","2474":"ok","2475":"ok","2476":"ok","2477":"ok","2478":"ok","2479":"ok","2480":"ok","2481":"ok","2482":"ok","2483":"ok","2484":"ok","2485":"ok","2486":"ok","2487":"ok","2488":"ok","2489":"ok","2490":"ok","2491":"ok","2492":"ok","2493":"ok","2494":"ok","2495":"ok","2499":"ok","2500":"ok","2501":"ok","2502":"ok","2503":"ok","2504":"ok","2505":"ok","2506":"ok","2507":"ok","2508":"ok","2509":"ok","2510":"ok","2511":"ok","2512":"ok","2513":"ok","2514":"ok","2515":"ok","2516":"ok","2517":"ok","2518":"ok","2519":"ok","2553":"ok","489":"ok","490":"ok","491":"ok","492":"ok","493":"ok","494":"ok","495":"ok","496":"ok","497":"ok","498":"ok","499":"ok","500":"ok","501":"ok","502":"ok","503":"ok","504":"ok","505":"ok","506":"ok","507":"ok","508":"ok","509":"ok","510":"ok","511":"ok","512":"ok","513":"ok","514":"ok","515":"ok","516":"ok","517":"ok","518":"ok","519":"ok","520":"ok","521":"ok","522":"ok","523":"ok","524":"ok","525":"ok","526":"ok","527":"ok","528":"ok","529":"ok","530":"ok","531":"ok","532":"ok","533":"ok","534":"ok","535":"ok","536":"ok","537":"ok","538":"ok","539":"ok","540":"ok","541":"ok","542":"ok","543":"ok","1448":"ok","1449":"ok","1450":"ok","1451":"ok","1452":"ok","1453":"ok","1454":"ok","1455":"ok","1456":"ok","1457":"ok","1458":"ok","1459":"ok","1460":"ok","1461":"ok","1462":"ok","1463":"ok","1464":"ok","1465":"ok","1466":"ok","1467":"ok","1468":"ok","1469":"ok","1470":"ok","1471":"ok","1472":"ok","1473":"ok","1474":"ok","1475":"ok","1476":"ok","1477":"ok","1478":"ok","1479":"ok","1480":"ok","1481":"ok","1482":"ok","1483":"ok","1484":"ok","1485":"ok","1486":"ok","1611":"ok","1612":"ok","1613":"ok","1614":"ok","1615":"ok","1616":"ok","1617":"ok","1618":"ok","1619":"ok","1620":"ok","1621":"ok","1622":"ok","1623":"ok","1624":"ok","1625":"ok","1626":"ok","1627":"ok","1628":"ok","1629":"ok","1630":"ok","1631":"ok","1632":"ok","1633":"ok","1634":"ok","1635":"ok","1636":"ok","1637":"ok","1638":"ok","1639":"ok","1640":"ok","1641":"ok","1642":"ok","1643":"ok","1644":"ok","1645":"ok","1646":"ok","1647":"ok","1648":"ok","1822":"ok","1823":"ok","1824":"ok","1825":"ok","1826":"ok","1827":"ok","1828":"ok","1829":"ok","1830":"ok","1831":"ok","1832":"ok","1833":"ok","1834":"ok","1835":"ok","1836":"ok","1837":"ok","1838":"ok","1839":"ok","1840":"ok","1841":"ok","1842":"ok","1843":"ok","1844":"ok","1845":"ok","1846":"ok","1847":"ok","1848":"ok","1849":"ok","1850":"ok","1851":"ok","1852":"ok","1853":"ok","1854":"ok","1855":"ok","1856":"ok","1857":"ok","1858":"ok","1859":"ok","1860":"ok","1861":"ok","1862":"ok","1863":"ok","1864":"ok","1865":"ok","1866":"ok","1867":"ok","1868":"ok","1869":"ok","1870":"ok","1871":"ok","1872":"ok","1873":"ok","1874":"ok","1875":"ok","1876":"ok","1877":"ok","1878":"ok","1879":"ok","1880":"ok","1881":"ok","1882":"ok","1883":"ok","1884":"ok","1885":"ok","1886":"ok","1887":"ok","1888":"ok","1889":"ok","1890":"ok","1891":"ok","1892":"ok","1893":"ok","1894":"ok","1895":"ok","1896":"ok","1897":"ok","1898":"ok","1899":"ok","1900":"ok","1901":"ok","33":"ok","34":"ok","35":"ok","36":"ok","37":"ok","38":"ok","39":"ok","40":"ok","41":"ok","42":"ok","43":"ok","44":"ok","45":"ok","46":"ok","47":"ok","48":"ok","49":"ok","50":"ok","51":"ok","52":"ok","53":"ok","54":"ok","55":"ok","56":"ok","57":"ok","58":"ok","59":"ok","60":"ok","3081":"ok","3082":"ok","3083":"ok","485":"ok","486":"ok","487":"ok","2959":"ok","2960":"ok","2961":"ok","2962":"ok","2963":"ok","2964":"ok","2965":"ok","2966":"ok","2967":"ok","2968":"ok","2969":"ok","2970":"ok","2971":"ok","2972":"ok","2973":"ok","2974":"ok","2975":"ok","2976":"ok","2977":"ok","2978":"ok","2979":"ok","2980":"ok","2981":"ok","2982":"ok","2983":"ok","2984":"ok","2985":"ok","2986":"ok","2987":"ok","2988":"ok","2989":"ok","2990":"ok","2991":"ok","2992":"ok","2993":"ok","2994":"ok","2995":"ok","2996":"ok","2997":"ok","2998":"ok","2999":"ok","3000":"ok","3001":"ok","3002":"ok","3003":"ok","3004":"ok","3005":"ok","3006":"ok","3007":"ok","3008":"ok","3009":"ok","3010":"ok","3011":"ok","3012":"ok","3013":"ok","3014":"ok","3015":"ok","3016":"ok","3017":"ok","3018":"ok","3019":"ok","3701":"ok","3702":"ok","3703":"ok","3704":"ok","3705":"ok","3706":"ok","3707":"ok","3708":"ok","3709":"ok","3710":"ok","3711":"ok"};
 const SORTED_DEPTS  = ["70","441","445","413","698","10","12","20","60","65","14","87","118","481","508","511","512","513","514","543","13","51","505","171","172","176","177","178","179","801","802","803","804","807","809","104","212","725","664","744","745","767","132","771","123","120","122","125","126","131","136","145","147","711","22","35","742","765","2","21","91","422","509","521","532","52","116","234","300","350","356","360","365","377","379","381","382","117","214","215","217","219","220","221","270","415","6","7","721","722","111","550","551","756","763","791","28","531","708","753","252","254","259","263","264","269","282","305","368","384","410","411","743","57","314","323","324","325","328","337","396","412","419","420","180","181","182","183","187","189","190","191","591","700","701","712","715","717","755","781","782","783","784","785","786","787","710","727","741","796","823"];
 
-// ═══ DATA ═══════════════════════════════════════════════════════════════════
+// ═══ DATA ════════════════════════════════════════════════════════════════════
 const DEPT_DIV = {};
 SORTED_DEPTS.forEach(d => { DEPT_DIV[d] = TRACKER_DATA[d]?.div || 'Other'; });
 const DEPT_COUNTS = {};
@@ -206,13 +287,13 @@ RAW_DATA.forEach(r => { ASSET_BY_ID[r.assetId] = r; });
 const STATUS_LABELS = { ok:'Verified OK', missing:'Not Found', wrong_location:'Wrong Location', damaged:'Damaged / Issue', other:'Other' };
 const STATUS_COLORS = { ok:'#22c55e', missing:'#ef4444', wrong_location:'#f59e0b', damaged:'#f97316', other:'#8b5cf6' };
 
-// ═══ MUTABLE STATE ═══════════════════════════════════════════════════════════
-let statuses   = { ...INIT_STATUSES };
-let notes      = {};
-let edits      = {};
-let extraAssets = [];  // imported assets not in RAW_DATA
+// ═══ STATE ═══════════════════════════════════════════════════════════════════
+let statuses    = { ...INIT_STATUSES };
+let notes       = {};
+let edits       = {};
+let extraAssets = [];
+let selected    = new Set();  // selected asset row IDs
 
-// ui state
 let selectedDept  = null;
 let selectedAsset = null;
 let viewMode      = localStorage.getItem('viewMode') || 'card';
@@ -221,24 +302,22 @@ let sortBy        = 'tagNumber';
 let sortDir       = 'asc';
 let searchQuery   = '';
 
-// ═══ SHEETS CONFIG ═══════════════════════════════════════════════════════════
-let SHEET_ID    = localStorage.getItem('sheetId')    || '';
+// ═══ SHEETS ══════════════════════════════════════════════════════════════════
+let SHEET_ID    = localStorage.getItem('sheetId')   || '';
 let API_KEY     = localStorage.getItem('apiKey')     || '';
 let WEB_APP_URL = localStorage.getItem('webAppUrl')  || '';
 
-// ═══ SHEETS READ/WRITE ═══════════════════════════════════════════════════════
 async function sheetsGet(range) {
   if (!SHEET_ID || !API_KEY) return null;
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?key=${API_KEY}`;
-    const r = await fetch(url);
+    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?key=${API_KEY}`);
     if (!r.ok) return null;
     return (await r.json()).values || [];
   } catch { return null; }
 }
 
 async function sheetsPost(payload) {
-  if (!WEB_APP_URL) return { ok: false, err: 'No Apps Script URL configured' };
+  if (!WEB_APP_URL) return { ok: false, err: 'No Apps Script URL' };
   try {
     const r = await fetch(WEB_APP_URL, {
       method: 'POST',
@@ -249,14 +328,11 @@ async function sheetsPost(payload) {
     let data;
     try { data = JSON.parse(text); } catch { data = { status: r.ok ? 'ok' : 'error', raw: text }; }
     return { ok: r.ok && data.status !== 'error', data };
-  } catch (e) {
-    return { ok: false, err: e.message };
-  }
+  } catch (e) { return { ok: false, err: e.message }; }
 }
 
-// ═══ SAVE QUEUE ═══════════════════════════════════════════════════════════════
-let _queue = {};
-let _qTimer = null;
+// ═══ SAVE QUEUE ══════════════════════════════════════════════════════════════
+let _queue = {}, _qTimer = null;
 
 function queueSave(assetId, payload) {
   _queue[assetId] = payload;
@@ -271,30 +347,21 @@ async function flushQueue() {
   if (!WEB_APP_URL) { showToast('Not connected — changes not saved', 'err', 3000); return; }
   showToast('Saving…', 'info');
   const { ok, err } = await sheetsPost({ action: 'upsert', rows });
-  if (ok) {
-    showToast('Saved ✓', 'ok', 2000);
-  } else {
-    showToast('Save failed: ' + (err || 'check console'), 'err', 4000);
-    console.error('Save failed', err);
-  }
+  if (ok) showToast('Saved ✓', 'ok', 2000);
+  else { showToast('Save failed — ' + (err||'check console'), 'err', 4000); console.error('Save failed', err); }
 }
 
 function buildRow(id) {
-  const r = RAW_DATA[id] || extraAssets.find(a => a.id === id);
+  const allAssets = [...RAW_DATA, ...extraAssets];
+  const r = allAssets.find(a => a.id === id);
   if (!r) return null;
   const ed = edits[id] || {};
   return {
-    assetId:            r.assetId,
-    tagNumber:          r.tagNumber,
-    dept:               r.dept,
-    status:             statuses[id] || '',
-    notes:              notes[id]    || '',
-    editedTag:          ed.tagNumber    || '',
-    editedLocation:     ed.location     || '',
-    editedCustodian:    ed.custodian    || '',
-    editedSerialId:     ed.serialId     || '',
-    editedDescription:  ed.description  || '',
-    lastUpdated:        new Date().toISOString()
+    assetId: r.assetId, tagNumber: r.tagNumber, dept: r.dept,
+    status: statuses[id] || '', notes: notes[id] || '',
+    editedTag: ed.tagNumber||'', editedLocation: ed.location||'',
+    editedCustodian: ed.custodian||'', editedSerialId: ed.serialId||'',
+    editedDescription: ed.description||'', lastUpdated: new Date().toISOString()
   };
 }
 
@@ -303,7 +370,6 @@ function saveAsset(id) {
   if (row) queueSave(row.assetId, row);
 }
 
-// Sync ALL touched assets (statuses + edits + notes) to sheet
 async function syncAll() {
   const allIds = new Set([
     ...Object.keys(statuses).map(Number),
@@ -312,97 +378,69 @@ async function syncAll() {
   ]);
   if (!allIds.size) { showToast('Nothing to sync yet', 'info', 2000); return; }
   if (!WEB_APP_URL) { showToast('Not connected — set up Google Sheets first', 'err', 3000); return; }
-
   const rows = [];
-  allIds.forEach(id => {
-    const row = buildRow(id);
-    if (row) rows.push(row);
-  });
-
+  allIds.forEach(id => { const row = buildRow(id); if (row) rows.push(row); });
   showToast(`Syncing ${rows.length} assets…`, 'info');
-  const { ok, err, data } = await sheetsPost({ action: 'upsert', rows });
-  if (ok) {
-    showToast(`Synced ${rows.length} assets ✓`, 'ok', 3000);
-  } else {
-    showToast('Sync failed: ' + (err || 'unknown error'), 'err', 4000);
-    console.error('Sync failed', err, data);
-  }
+  const { ok, err } = await sheetsPost({ action: 'upsert', rows });
+  if (ok) showToast(`Synced ${rows.length} assets ✓`, 'ok', 3000);
+  else showToast('Sync failed — ' + (err||'unknown'), 'err', 4000);
 }
 
-// ═══ LOAD FROM SHEETS ════════════════════════════════════════════════════════
 async function loadFromSheets() {
   showToast('Loading saved progress…', 'info');
   const rows = await sheetsGet('AuditProgress!A:K');
-  if (!rows || rows.length < 2) {
-    showToast('No saved progress found — starting fresh', 'info', 2500);
-    return;
-  }
-  const hdr = rows[0];
-  const idx = {};
+  if (!rows || rows.length < 2) { showToast('No saved progress found', 'info', 2500); return; }
+  const hdr = rows[0]; const idx = {};
   hdr.forEach((h, i) => { idx[h] = i; });
-
-  statuses = {};
-  notes    = {};
-  edits    = {};
-
+  statuses = {}; notes = {}; edits = {};
   rows.slice(1).forEach(row => {
-    const assetId = (row[idx['assetId']] || '').toString().trim();
-    const asset   = ASSET_BY_ID[assetId];
+    const assetId = (row[idx['assetId']]||'').toString().trim();
+    const asset = ASSET_BY_ID[assetId];
     if (!asset) return;
     const id = asset.id;
-
-    const st = (row[idx['status']] || '').trim();
-    if (st) statuses[id] = st;
-
-    const nt = (row[idx['notes']] || '').trim();
-    if (nt) notes[id] = nt;
-
-    const eTag  = (row[idx['editedTag']]          || '').trim();
-    const eLoc  = (row[idx['editedLocation']]      || '').trim();
-    const eCust = (row[idx['editedCustodian']]     || '').trim();
-    const eSer  = (row[idx['editedSerialId']]      || '').trim();
-    const eDesc = (row[idx['editedDescription']]   || '').trim();
-
-    if (eTag || eLoc || eCust || eSer || eDesc) {
-      edits[id] = {};
-      if (eTag  && eTag  !== asset.tagNumber)   edits[id].tagNumber   = eTag;
-      if (eLoc  && eLoc  !== asset.location)    edits[id].location    = eLoc;
-      if (eCust && eCust !== asset.custodian)   edits[id].custodian   = eCust;
-      if (eSer  && eSer  !== asset.serialId)    edits[id].serialId    = eSer;
-      if (eDesc && eDesc !== asset.description) edits[id].description = eDesc;
+    const st = (row[idx['status']]||'').trim(); if (st) statuses[id] = st;
+    const nt = (row[idx['notes']]||'').trim();  if (nt) notes[id] = nt;
+    const eTag=(row[idx['editedTag']]||'').trim(), eLoc=(row[idx['editedLocation']]||'').trim(),
+          eCu=(row[idx['editedCustodian']]||'').trim(), eSe=(row[idx['editedSerialId']]||'').trim(),
+          eDe=(row[idx['editedDescription']]||'').trim();
+    if (eTag||eLoc||eCu||eSe||eDe) {
+      edits[id]={};
+      if(eTag&&eTag!==asset.tagNumber)   edits[id].tagNumber=eTag;
+      if(eLoc&&eLoc!==asset.location)    edits[id].location=eLoc;
+      if(eCu&&eCu!==asset.custodian)     edits[id].custodian=eCu;
+      if(eSe&&eSe!==asset.serialId)      edits[id].serialId=eSe;
+      if(eDe&&eDe!==asset.description)   edits[id].description=eDe;
     }
   });
-
-  const total = Object.keys(statuses).length;
-  showToast(`Loaded ${total} audited assets ✓`, 'ok', 2500);
-  renderSidebar();
-  renderMain();
+  showToast(`Loaded ${Object.keys(statuses).length} audited assets ✓`, 'ok', 2500);
+  renderSidebar(); renderMain();
 }
 
 // ═══ THEME ════════════════════════════════════════════════════════════════════
 function initTheme() {
   const t = localStorage.getItem('theme') || 'dark';
   document.documentElement.setAttribute('data-theme', t);
-  const btn = document.getElementById('theme-btn');
-  if (btn) btn.textContent = t === 'dark' ? '☀' : '◑';
+  const b = document.getElementById('theme-btn');
+  if (b) b.textContent = t==='dark' ? '☀' : '◑';
 }
 function toggleTheme() {
-  const cur  = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
-  document.getElementById('theme-btn').textContent = next === 'dark' ? '☀' : '◑';
+  document.getElementById('theme-btn').textContent = next==='dark' ? '☀' : '◑';
 }
 
 // ═══ SIDEBAR ═════════════════════════════════════════════════════════════════
-function toggleSidebar()  { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
-function closeSidebar()   { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
+function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); }
+
+function allAssets() { return [...RAW_DATA, ...extraAssets]; }
 
 function deptProgress() {
   const m = {};
-  const allAssets = [...RAW_DATA, ...extraAssets];
-  allAssets.forEach(r => {
-    if (!m[r.dept]) m[r.dept] = { total: 0, done: 0 };
+  allAssets().forEach(r => {
+    if (!m[r.dept]) m[r.dept] = {total:0, done:0};
     m[r.dept].total++;
     if (statuses[r.id]) m[r.dept].done++;
   });
@@ -411,1066 +449,873 @@ function deptProgress() {
 
 function renderSidebar() {
   const prog = deptProgress();
-  const q    = (document.getElementById('dept-search')?.value || '').toLowerCase();
+  const q = (document.getElementById('dept-search')?.value||'').toLowerCase();
   const wrap = document.getElementById('dept-list-wrap');
   if (!wrap) return;
   wrap.innerHTML = '';
-
-  const allDepts = [...new Set([...SORTED_DEPTS, ...extraAssets.map(a => a.dept)])];
-  const filtered = allDepts.filter(d =>
-    !q || d.includes(q) ||
-    (DEPT_NAMES[d] || '').toLowerCase().includes(q) ||
-    (DEPT_DIV[d]   || '').toLowerCase().includes(q)
-  );
+  const allDepts = [...new Set([...SORTED_DEPTS, ...extraAssets.map(a=>a.dept)])];
+  const filtered = allDepts.filter(d => !q || d.includes(q) || (DEPT_NAMES[d]||'').toLowerCase().includes(q) || (DEPT_DIV[d]||'').toLowerCase().includes(q));
 
   let lastDiv = null;
   filtered.forEach(dept => {
-    const div_ = DEPT_DIV[dept] || 'Other';
-    if (div_ !== lastDiv) {
-      const lbl = document.createElement('div');
-      lbl.className = 'div-header';
-      lbl.textContent = div_;
-      wrap.appendChild(lbl);
-      lastDiv = div_;
+    const div_ = DEPT_DIV[dept]||'Other';
+    if (div_!==lastDiv) {
+      const lbl=document.createElement('div'); lbl.className='div-header'; lbl.textContent=div_;
+      wrap.appendChild(lbl); lastDiv=div_;
     }
-
-    const p    = prog[dept] || { total: DEPT_COUNTS[dept] || 0, done: 0 };
-    const pct  = p.total ? Math.round(p.done / p.total * 100) : 0;
-    const name = DEPT_NAMES[dept] || `Dept ${dept}`;
-    const tk   = TRACKER_DATA[dept];
-    const done = tk?.completed;
-
-    const card = document.createElement('button');
-    card.className = 'dept-item' + (selectedDept === dept ? ' active' : '');
-    card.innerHTML = `
-      <div style="font-size:9px;color:var(--text4);min-width:44px;flex-shrink:0;line-height:1.5;">
-        <div style="font-size:8px;color:var(--text4);text-transform:uppercase;letter-spacing:.4px;">DEPT ID</div>
-        <div style="font-weight:700;color:var(--text2);">${dept}</div>
+    const p=prog[dept]||{total:DEPT_COUNTS[dept]||0,done:0};
+    const pct=p.total?Math.round(p.done/p.total*100):0;
+    const name=DEPT_NAMES[dept]||`Dept ${dept}`;
+    const done=TRACKER_DATA[dept]?.completed;
+    const card=document.createElement('button');
+    card.className='dept-item'+(selectedDept===dept?' active':'');
+    card.innerHTML=`
+      <div style="font-size:9px;color:var(--text4);min-width:44px;flex-shrink:0;line-height:1.6">
+        <div style="font-size:8px;text-transform:uppercase;letter-spacing:.4px">DEPT ID</div>
+        <div style="font-weight:700;color:var(--text2)">${dept}</div>
       </div>
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-          <span style="font-size:12px;font-weight:600;color:${done?'var(--green2)':'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;padding-right:6px;">${name}</span>
-          <span style="font-size:11px;font-weight:700;color:${pct===100?'var(--green2)':pct>0?'var(--accent2)':'var(--text4)'};flex-shrink:0;">${pct}%</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+          <span style="font-size:12px;font-weight:600;color:${done?'var(--green2)':'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;padding-right:6px">${name}</span>
+          <span style="font-size:11px;font-weight:700;color:${pct===100?'var(--green2)':pct>0?'var(--accent2)':'var(--text4)'};flex-shrink:0">${pct}%</span>
         </div>
-        <div class="pbar-wrap" style="height:2px;">
-          <div class="pbar-fill" style="background:${pct===100?'var(--green)':'var(--accent)'};width:${pct}%;"></div>
-        </div>
+        <div class="pbar-wrap" style="height:2px"><div class="pbar-fill" style="background:${pct===100?'var(--green)':'var(--accent)'};width:${pct}%"></div></div>
       </div>`;
-    card.addEventListener('click', () => {
-      selectedDept  = dept;
-      selectedAsset = null;
-      filterStatus  = 'all';
-      sortBy        = 'tagNumber';
-      sortDir       = 'asc';
-      searchQuery   = '';
-      document.getElementById('global-search').value = '';
-      document.getElementById('search-clear').style.display = 'none';
-      renderSidebar();
-      renderMain();
-      closeSidebar();
+    card.addEventListener('click', ()=>{
+      selectedDept=dept; selectedAsset=null; filterStatus='all';
+      sortBy='tagNumber'; sortDir='asc'; searchQuery=''; selected.clear();
+      document.getElementById('global-search').value='';
+      document.getElementById('search-clear').style.display='none';
+      renderSidebar(); renderMain(); closeSidebar();
     });
     wrap.appendChild(card);
   });
 
-  // Global progress
-  const allAssets = [...RAW_DATA, ...extraAssets];
-  const total = allAssets.length;
-  const done_ = Object.keys(statuses).length;
-  const pct_  = total ? Math.round(done_ / total * 100) : 0;
-  const pb = document.getElementById('global-pbar');
-  if (pb) { pb.style.width = pct_ + '%'; pb.style.background = pct_ === 100 ? 'var(--green)' : 'var(--accent)'; }
-  const pl = document.getElementById('global-pct-label');
-  if (pl) pl.textContent = pct_ + '%';
-  const al = document.getElementById('global-asset-label');
-  if (al) al.textContent = `${done_} / ${total} assets`;
+  const tot=allAssets().length, dn=Object.keys(statuses).length, pct_=tot?Math.round(dn/tot*100):0;
+  const pb=document.getElementById('global-pbar');
+  if(pb){pb.style.width=pct_+'%';pb.style.background=pct_===100?'var(--green)':'var(--accent)';}
+  const pl=document.getElementById('global-pct-label'); if(pl) pl.textContent=pct_+'%';
+  const al=document.getElementById('global-asset-label'); if(al) al.textContent=`${dn} / ${tot} assets`;
 }
 
-// ═══ VIEW MODE ════════════════════════════════════════════════════════════════
+// ═══ VIEW MODE ═══════════════════════════════════════════════════════════════
 function setViewMode(mode) {
-  viewMode = mode;
-  localStorage.setItem('viewMode', mode);
-  document.getElementById('vt-card').classList.toggle('active', mode === 'card');
-  document.getElementById('vt-table').classList.toggle('active', mode === 'table');
+  viewMode=mode; localStorage.setItem('viewMode',mode);
+  document.getElementById('vt-card').classList.toggle('active',mode==='card');
+  document.getElementById('vt-table').classList.toggle('active',mode==='table');
+  selected.clear(); updateBulkBar();
   renderMain();
 }
 
-// ═══ HELPERS ══════════════════════════════════════════════════════════════════
-const fmt$ = n => n ? '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
-const fmtD = s => (!s || s.startsWith('NaT') || s === 'nan') ? '—' : s;
+// ═══ HELPERS ═════════════════════════════════════════════════════════════════
+const fmt$ = n => n ? '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+const fmtD = s => (!s||s.startsWith('NaT')||s==='nan') ? '—' : s;
 
 function getDeptAssets() {
   if (!selectedDept) return [];
-  const allAssets = [...RAW_DATA, ...extraAssets];
-  let assets = allAssets.filter(r => r.dept === selectedDept);
-  if (filterStatus === 'unreviewed') assets = assets.filter(r => !statuses[r.id]);
-  else if (filterStatus !== 'all')   assets = assets.filter(r => statuses[r.id] === filterStatus);
-  return assets.slice().sort((a, b) => {
-    const getV = r => { const e = edits[r.id] || {}; return sortBy === 'tagNumber' ? (e.tagNumber ?? r.tagNumber) : (e[sortBy] ?? r[sortBy] ?? ''); };
-    let av = getV(a), bv = getV(b);
-    if (sortBy === 'amount') { av = Number(av); bv = Number(bv); }
-    if (av < bv) return sortDir === 'asc' ? -1 : 1;
-    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+  let assets = allAssets().filter(r=>r.dept===selectedDept);
+  if (filterStatus==='unreviewed') assets=assets.filter(r=>!statuses[r.id]);
+  else if (filterStatus!=='all')   assets=assets.filter(r=>statuses[r.id]===filterStatus);
+  return assets.slice().sort((a,b)=>{
+    const v=r=>{const e=edits[r.id]||{};return sortBy==='tagNumber'?(e.tagNumber??r.tagNumber):(e[sortBy]??r[sortBy]??'');};
+    let av=v(a),bv=v(b);
+    if(sortBy==='amount'){av=Number(av);bv=Number(bv);}
+    if(av<bv)return sortDir==='asc'?-1:1;
+    if(av>bv)return sortDir==='asc'?1:-1;
     return 0;
   });
 }
 
-// ═══ MAIN VIEW ════════════════════════════════════════════════════════════════
+// ═══ SELECTION / BULK ════════════════════════════════════════════════════════
+function toggleSelect(id, e) {
+  e.stopPropagation();
+  if (selected.has(id)) selected.delete(id); else selected.add(id);
+  updateBulkBar();
+  // update just this row's visual
+  const el = document.querySelector(`[data-asset-id="${id}"]`);
+  if (el) {
+    el.classList.toggle('selected', selected.has(id));
+    const cb = el.querySelector('.cb');
+    if (cb) cb.classList.toggle('checked', selected.has(id));
+  }
+  updateSelectAllCb();
+}
+
+function selectAll(assets) {
+  const allSelected = assets.every(r=>selected.has(r.id));
+  if (allSelected) { assets.forEach(r=>selected.delete(r.id)); }
+  else             { assets.forEach(r=>selected.add(r.id)); }
+  updateBulkBar(); renderMain();
+}
+
+function clearSelection() { selected.clear(); updateBulkBar(); renderMain(); }
+
+function updateBulkBar() {
+  const bar=document.getElementById('bulk-bar');
+  const cnt=document.getElementById('bulk-count');
+  if(selected.size>0){bar.classList.add('show');cnt.textContent=`${selected.size} selected`;}
+  else{bar.classList.remove('show');cnt.textContent='';}
+}
+
+function updateSelectAllCb() {
+  const cb=document.getElementById('select-all-cb');
+  if(!cb) return;
+  const assets=getDeptAssets();
+  const allSel=assets.length>0&&assets.every(r=>selected.has(r.id));
+  const someSel=assets.some(r=>selected.has(r.id));
+  cb.className='cb'+(allSel?' checked':someSel?' indeterminate':'');
+}
+
+function bulkMarkOk() { bulkSetStatus('ok'); }
+
+function bulkSetStatus(status) {
+  if(!selected.size) return;
+  const ids=[...selected];
+  ids.forEach(id=>{statuses[id]=status;});
+  // queue all saves
+  ids.forEach(id=>{ const row=buildRow(id); if(row) _queue[row.assetId]=row; });
+  clearTimeout(_qTimer); _qTimer=setTimeout(flushQueue,500);
+  clearSelection();
+  renderMain(); renderSidebar();
+  showToast(`Marked ${ids.length} assets as "${STATUS_LABELS[status]}"`, 'ok', 2500);
+}
+
+// ═══ MAIN VIEW ═══════════════════════════════════════════════════════════════
 function renderMain() {
-  const wrap = document.getElementById('main-view');
-  if (!wrap) return;
-
-  if (searchQuery) { renderSearch(wrap); return; }
-
-  if (!selectedDept) {
-    wrap.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;text-align:center;color:var(--text3);">
-      <div style="font-size:48px;margin-bottom:16px;">📋</div>
-      <div style="font-size:18px;font-weight:700;color:var(--text2);margin-bottom:8px;">Select a Department</div>
-      <div style="font-size:13px;max-width:320px;">Choose a department from the sidebar to view and audit its assets, or use the search bar above.</div>
+  const wrap=document.getElementById('main-view');
+  if(!wrap) return;
+  if(searchQuery){renderSearch(wrap);return;}
+  if(!selectedDept){
+    wrap.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 24px;text-align:center;color:var(--text3)">
+      <div style="font-size:52px;margin-bottom:16px">📋</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text2);margin-bottom:8px">Select a Department</div>
+      <div style="font-size:13px;max-width:340px;line-height:1.6">Choose a department from the sidebar to view and audit its assets, or use the search bar above.</div>
     </div>`;
     return;
   }
 
-  const prog = deptProgress();
-  const p    = prog[selectedDept] || { total: DEPT_COUNTS[selectedDept] || 0, done: 0 };
-  const pct  = p.total ? Math.round(p.done / p.total * 100) : 0;
-  const name = DEPT_NAMES[selectedDept] || `Dept ${selectedDept}`;
-  const tk   = TRACKER_DATA[selectedDept];
-  const assets = getDeptAssets();
+  const prog=deptProgress(), p=prog[selectedDept]||{total:DEPT_COUNTS[selectedDept]||0,done:0};
+  const pct=p.total?Math.round(p.done/p.total*100):0;
+  const name=DEPT_NAMES[selectedDept]||`Dept ${selectedDept}`;
+  const tk=TRACKER_DATA[selectedDept];
+  const assets=getDeptAssets();
+  const allSel=assets.length>0&&assets.every(r=>selected.has(r.id));
+  const someSel=assets.some(r=>selected.has(r.id));
 
-  let html = `
-  <div class="card" style="margin-bottom:14px;">
-    <div class="card-body" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-      <div style="flex:1;min-width:180px;">
-        <div style="font-size:18px;font-weight:800;margin-bottom:2px;">${name}</div>
-        <div style="font-size:12px;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-          <span>Dept ID <strong style="color:var(--text2);">${selectedDept}</strong></span>
-          ${tk?.div ? `<span>· ${tk.div}</span>` : ''}
-          ${tk?.completed && tk.completedOn ? `<span style="color:var(--green);">· ✓ Audit completed ${tk.completedOn}</span>` : ''}
-        </div>
-        <div class="pbar-wrap"><div class="pbar-fill" style="background:${pct===100?'var(--green)':'var(--accent)'};width:${pct}%;"></div></div>
+  let html=`
+  <div class="dept-header-card">
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:20px;font-weight:800;margin-bottom:3px">${name}</div>
+      <div style="font-size:12px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <span>Dept ID <strong style="color:var(--text2)">${selectedDept}</strong></span>
+        ${tk?.div?`<span>· ${tk.div}</span>`:''}
+        ${tk?.completed&&tk.completedOn?`<span style="color:var(--green)">· ✓ Audit completed ${tk.completedOn}</span>`:''}
       </div>
-      <div style="display:flex;gap:16px;text-align:center;flex-shrink:0;">
-        <div class="stat-card" style="padding:10px 16px;min-width:60px;">
-          <div class="stat-num" style="font-size:22px;color:${pct===100?'var(--green2)':'var(--accent2)'};">${pct}%</div>
-          <div class="stat-label">Done</div>
-        </div>
-        <div class="stat-card" style="padding:10px 16px;min-width:60px;">
-          <div class="stat-num" style="font-size:22px;">${p.done}</div>
-          <div class="stat-label">Audited</div>
-        </div>
-        <div class="stat-card" style="padding:10px 16px;min-width:60px;">
-          <div class="stat-num" style="font-size:22px;">${p.total}</div>
-          <div class="stat-label">Total</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
-        <button class="btn sm primary" onclick="markDeptAll()">✓ Mark All OK</button>
-        <button class="btn sm" onclick="markDeptComplete()">Complete Dept</button>
-      </div>
+      <div class="pbar-wrap" style="max-width:400px"><div class="pbar-fill" style="background:${pct===100?'var(--green)':'var(--accent)'};width:${pct}%"></div></div>
+    </div>
+    <div class="dept-stats">
+      <div class="stat-pill"><div class="num" style="color:${pct===100?'var(--green2)':'var(--accent2)'}">${pct}%</div><div class="lbl">Done</div></div>
+      <div class="stat-pill"><div class="num">${p.done}</div><div class="lbl">Audited</div></div>
+      <div class="stat-pill"><div class="num">${p.total-p.done}</div><div class="lbl">Left</div></div>
+      <div class="stat-pill"><div class="num">${p.total}</div><div class="lbl">Total</div></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-self:flex-start">
+      <button class="btn sm primary" onclick="markDeptAll()">✓ Mark Unreviewed OK</button>
+      <button class="btn sm" onclick="markDeptComplete()">Complete All</button>
     </div>
   </div>
 
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
-    <div style="display:flex;gap:4px;flex-wrap:wrap;flex:1;">`;
+  <div class="toolbar">
+    <div style="display:flex;gap:4px;flex-wrap:wrap;flex:1">`;
 
-  [['all','All'],['unreviewed','Unreviewed'],['ok','✓ OK'],['missing','Not Found'],['wrong_location','Wrong Loc'],['damaged','Damaged'],['other','Other']].forEach(([f,lbl]) => {
-    html += `<button class="filter-chip${filterStatus===f?' active':''}" data-filter="${f}">${lbl}</button>`;
+  [['all','All'],['unreviewed','Unreviewed'],['ok','✓ OK'],['missing','Not Found'],['wrong_location','Wrong Loc'],['damaged','Damaged'],['other','Other']].forEach(([f,lbl])=>{
+    html+=`<button class="filter-chip${filterStatus===f?' active':''}" data-filter="${f}">${lbl}</button>`;
   });
 
-  html += `</div><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
-    <span style="font-size:10px;color:var(--text4);">Sort:</span>`;
-  [['tagNumber','Tag #'],['location','Location'],['description','Name'],['amount','Value'],['custodian','Custodian']].forEach(([key,lbl]) => {
-    html += `<button class="sort-chip${sortBy===key?' active':''}" data-sort="${key}">${lbl}${sortBy===key?(sortDir==='asc'?' ↑':' ↓'):''}</button>`;
+  html+=`</div><div class="toolbar-sep"></div><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:10px;color:var(--text4)">Sort:</span>`;
+  [['tagNumber','Tag #'],['location','Location'],['description','Name'],['amount','Value'],['custodian','Custodian']].forEach(([key,lbl])=>{
+    html+=`<button class="sort-chip${sortBy===key?' active':''}" data-sort="${key}">${lbl}${sortBy===key?(sortDir==='asc'?' ↑':' ↓'):''}</button>`;
   });
-  html += `</div></div>`;
+  html+=`</div></div>`;
 
-  if (viewMode === 'table') {
-    html += buildTable(assets);
-  } else {
-    html += '<div id="card-list">';
-    if (!assets.length) html += `<div style="color:var(--text3);text-align:center;padding:40px;">No assets match this filter.</div>`;
-    assets.forEach(r => { html += buildCard(r); });
-    html += '</div>';
+  // Select-all row
+  html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;margin-bottom:6px;border-radius:8px;background:var(--bg2);border:1px solid var(--border)">
+    <div class="cb-wrap" onclick="selectAll(getDeptAssets())">
+      <div id="select-all-cb" class="cb${allSel?' checked':someSel?' indeterminate':''}"></div>
+    </div>
+    <span style="font-size:12px;color:var(--text3)">${assets.length} asset${assets.length!==1?'s':''} shown${selected.size>0?' · <strong style=color:var(--accent)>'+selected.size+' selected</strong>':''}</span>
+    ${selected.size>0?`<button class="btn xs ghost" onclick="clearSelection()" style="margin-left:auto">Clear selection</button>`:''}
+  </div>`;
+
+  if(viewMode==='table') html+=buildTable(assets);
+  else {
+    html+='<div id="card-list">';
+    if(!assets.length) html+=`<div style="color:var(--text3);text-align:center;padding:40px">No assets match this filter.</div>`;
+    assets.forEach(r=>{html+=buildCard(r);});
+    html+='</div>';
   }
 
-  wrap.innerHTML = html;
-  bindMainEvents(wrap);
+  wrap.innerHTML=html;
+  bindMainEvents(wrap, assets);
 }
 
-function bindMainEvents(wrap) {
-  wrap.querySelectorAll('.filter-chip').forEach(b => b.addEventListener('click', () => { filterStatus = b.dataset.filter; renderMain(); }));
-  wrap.querySelectorAll('.sort-chip').forEach(b => b.addEventListener('click', () => {
-    if (sortBy === b.dataset.sort) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-    else { sortBy = b.dataset.sort; sortDir = 'asc'; }
-    renderMain();
+function bindMainEvents(wrap, assets) {
+  wrap.querySelectorAll('.filter-chip').forEach(b=>b.addEventListener('click',()=>{filterStatus=b.dataset.filter;renderMain();}));
+  wrap.querySelectorAll('.sort-chip').forEach(b=>b.addEventListener('click',()=>{
+    if(sortBy===b.dataset.sort)sortDir=sortDir==='asc'?'desc':'asc'; else{sortBy=b.dataset.sort;sortDir='asc';} renderMain();
   }));
-  wrap.querySelectorAll('th[data-sort]').forEach(th => th.addEventListener('click', () => {
-    if (sortBy === th.dataset.sort) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-    else { sortBy = th.dataset.sort; sortDir = 'asc'; }
-    renderMain();
+  wrap.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('click',()=>{
+    if(sortBy===th.dataset.sort)sortDir=sortDir==='asc'?'desc':'asc'; else{sortBy=th.dataset.sort;sortDir='asc';} renderMain();
   }));
-  wrap.querySelectorAll('[data-asset-id]').forEach(el => {
-    el.addEventListener('click', e => {
-      if (e.target.classList.contains('quick-ok')) return;
-      const id  = parseInt(el.dataset.assetId);
-      const allAssets = [...RAW_DATA, ...extraAssets];
-      selectedAsset = allAssets.find(a => a.id === id);
-      if (selectedAsset) showDetail(selectedAsset);
+  wrap.querySelectorAll('[data-asset-id]').forEach(el=>{
+    el.addEventListener('click',e=>{
+      if(e.target.classList.contains('quick-ok')||e.target.closest('.cb-wrap')) return;
+      const id=parseInt(el.dataset.assetId);
+      const asset=allAssets().find(a=>a.id===id);
+      if(asset){selectedAsset=asset;showDetail(asset);}
     });
   });
-  wrap.querySelectorAll('.quick-ok').forEach(b => b.addEventListener('click', e => {
+  wrap.querySelectorAll('.quick-ok').forEach(b=>b.addEventListener('click',e=>{
     e.stopPropagation();
-    const id = parseInt(b.closest('[data-asset-id]').dataset.assetId);
-    statuses[id] = 'ok';
-    saveAsset(id);
-    renderMain();
-    renderSidebar();
+    const id=parseInt(b.closest('[data-asset-id]').dataset.assetId);
+    statuses[id]='ok'; saveAsset(id); renderMain(); renderSidebar();
   }));
+  wrap.querySelectorAll('.cb-wrap[data-cb-id]').forEach(el=>{
+    el.addEventListener('click',e=>toggleSelect(parseInt(el.dataset.cbId),e));
+  });
 }
 
-// ═══ BULK DEPT ACTIONS ════════════════════════════════════════════════════════
+// ═══ BULK DEPT ═══════════════════════════════════════════════════════════════
 function markDeptAll() {
-  if (!selectedDept) return;
-  const allAssets = [...RAW_DATA, ...extraAssets];
-  const deptAssets = allAssets.filter(r => r.dept === selectedDept);
-  const unreviewed = deptAssets.filter(r => !statuses[r.id]);
-  if (!unreviewed.length) { showToast('All assets already have a status', 'info', 2000); return; }
-  if (!confirm(`Mark ${unreviewed.length} unreviewed asset(s) in this department as "Verified OK"?`)) return;
-  unreviewed.forEach(r => { statuses[r.id] = 'ok'; });
-  // Queue all at once
-  unreviewed.forEach(r => { const row = buildRow(r.id); if (row) _queue[row.assetId] = row; });
-  clearTimeout(_qTimer);
-  _qTimer = setTimeout(flushQueue, 500);
-  renderMain();
-  renderSidebar();
-  showToast(`Marked ${unreviewed.length} assets OK`, 'ok', 2500);
+  if(!selectedDept) return;
+  const unrev=allAssets().filter(r=>r.dept===selectedDept&&!statuses[r.id]);
+  if(!unrev.length){showToast('All assets already have a status','info',2000);return;}
+  if(!confirm(`Mark ${unrev.length} unreviewed asset(s) in Dept ${selectedDept} as "Verified OK"?`)) return;
+  unrev.forEach(r=>{statuses[r.id]='ok';});
+  unrev.forEach(r=>{const row=buildRow(r.id);if(row)_queue[row.assetId]=row;});
+  clearTimeout(_qTimer);_qTimer=setTimeout(flushQueue,500);
+  renderMain();renderSidebar();
+  showToast(`Marked ${unrev.length} assets OK`,'ok',2500);
 }
 
 function markDeptComplete() {
-  if (!selectedDept) return;
-  const allAssets = [...RAW_DATA, ...extraAssets];
-  const deptAssets = allAssets.filter(r => r.dept === selectedDept);
-  if (!confirm(`Mark ALL ${deptAssets.length} asset(s) in Dept ${selectedDept} as "Verified OK" and complete this department?`)) return;
-  deptAssets.forEach(r => { statuses[r.id] = 'ok'; });
-  deptAssets.forEach(r => { const row = buildRow(r.id); if (row) _queue[row.assetId] = row; });
-  clearTimeout(_qTimer);
-  _qTimer = setTimeout(flushQueue, 500);
-  renderMain();
-  renderSidebar();
-  showToast(`Dept ${selectedDept} marked complete ✓`, 'ok', 3000);
+  if(!selectedDept) return;
+  const da=allAssets().filter(r=>r.dept===selectedDept);
+  if(!confirm(`Mark ALL ${da.length} asset(s) in Dept ${selectedDept} as "Verified OK"?`)) return;
+  da.forEach(r=>{statuses[r.id]='ok';});
+  da.forEach(r=>{const row=buildRow(r.id);if(row)_queue[row.assetId]=row;});
+  clearTimeout(_qTimer);_qTimer=setTimeout(flushQueue,500);
+  renderMain();renderSidebar();
+  showToast(`Dept ${selectedDept} complete ✓`,'ok',3000);
 }
 
-// ═══ CARD / TABLE BUILDERS ════════════════════════════════════════════════════
+// ═══ CARD BUILDER ════════════════════════════════════════════════════════════
 function buildCard(r) {
-  const ed  = edits[r.id] || {};
-  const m   = { ...r, ...ed };
-  const st  = statuses[r.id];
-  const tag = ed.tagNumber ?? r.tagNumber;
-  const sc  = st ? STATUS_COLORS[st] : 'var(--border)';
-  const hasEd = Object.keys(ed).some(k => ed[k] !== r[k]);
-  return `<div class="asset-card" data-asset-id="${r.id}">
-    <div class="status-bar" style="background:${sc};"></div>
+  const ed=edits[r.id]||{}, m={...r,...ed}, st=statuses[r.id];
+  const tag=ed.tagNumber??r.tagNumber, sc=st?STATUS_COLORS[st]:'var(--border)';
+  const hasEd=Object.keys(ed).some(k=>ed[k]!==r[k]);
+  const isSel=selected.has(r.id);
+  return `<div class="asset-card${isSel?' selected':''}" data-asset-id="${r.id}">
+    <div class="cb-wrap" data-cb-id="${r.id}" style="padding:0 4px 0 10px">
+      <div class="cb${isSel?' checked':''}"></div>
+    </div>
+    <div class="status-bar" style="background:${sc}"></div>
     <div class="card-content">
-      <div class="card-title">${m.description || '—'}</div>
+      <div class="card-title">${m.description||'—'}</div>
       <div class="card-meta">
-        <span>Tag <strong style="color:${ed.tagNumber&&ed.tagNumber!==r.tagNumber?'var(--amber)':'var(--text2)'};">${tag}</strong></span>
-        ${m.location ? `<span>· ${m.location}</span>` : `<span style="color:var(--text4);">· No location</span>`}
-        ${m.custodian ? `<span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">· ${m.custodian.split(',').reverse().join(' ')}</span>` : ''}
-        <span style="color:var(--green);margin-left:auto;">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</span>
-        ${hasEd ? `<span style="color:var(--amber);">· edited</span>` : ''}
-        ${st ? `<span style="color:${STATUS_COLORS[st]};font-weight:700;">· ${STATUS_LABELS[st]}</span>` : ''}
+        <span>Tag <strong style="color:${ed.tagNumber&&ed.tagNumber!==r.tagNumber?'var(--amber)':'var(--text2)'}">${tag}</strong></span>
+        ${m.location?`<span>· ${m.location}</span>`:`<span style="color:var(--text4)">· No location</span>`}
+        ${m.custodian?`<span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">· ${m.custodian.split(',').reverse().join(' ')}</span>`:''}
+        <span style="color:var(--green);margin-left:auto">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</span>
+        ${hasEd?`<span style="color:var(--amber)">· edited</span>`:''}
+        ${st?`<span style="color:${STATUS_COLORS[st]};font-weight:700">· ${STATUS_LABELS[st]}</span>`:''}
       </div>
     </div>
-    ${!st ? `<button class="quick-ok" title="Mark OK">✓</button>` : ''}
+    ${!st?`<button class="quick-ok" title="Mark OK">✓</button>`:''}
   </div>`;
 }
 
+// ═══ TABLE BUILDER ════════════════════════════════════════════════════════════
 function buildTable(assets) {
-  const cols = [
-    { key:'tagNumber',   label:'Tag #',      sort:'tagNumber' },
-    { key:'description', label:'Description', sort:'description' },
-    { key:'location',    label:'Location',    sort:'location' },
-    { key:'custodian',   label:'Custodian',   sort:'custodian' },
-    { key:'serialId',    label:'Serial ID',   sort:'serialId' },
-    { key:'amount',      label:'Value',       sort:'amount' },
-    { key:'_status',     label:'Status',      sort:null },
+  const cols=[
+    {key:'_cb',      label:'',           sort:null,     w:'40px'},
+    {key:'tagNumber',label:'Tag #',      sort:'tagNumber', w:'100px'},
+    {key:'description',label:'Description',sort:'description',w:''},
+    {key:'location', label:'Location',   sort:'location',  w:'120px'},
+    {key:'custodian',label:'Custodian',  sort:'custodian', w:'150px'},
+    {key:'serialId', label:'Serial ID',  sort:'serialId',  w:'120px'},
+    {key:'amount',   label:'Value',      sort:'amount',    w:'90px'},
+    {key:'_status',  label:'Status',     sort:null,        w:'130px'},
+    {key:'_ok',      label:'',           sort:null,        w:'40px'},
   ];
-  let h = `<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);">
+  const allSel=assets.length>0&&assets.every(r=>selected.has(r.id));
+  const someSel=assets.some(r=>selected.has(r.id));
+
+  let h=`<div class="table-wrap"><div class="table-scroll">
   <table class="asset-table"><thead><tr>`;
-  cols.forEach(c => {
-    const active = sortBy === c.sort;
-    h += `<th ${c.sort ? `data-sort="${c.sort}"` : ''}>${c.label}${c.sort ? `<span style="margin-left:4px;opacity:${active?1:.4};color:${active?'var(--accent)':'inherit'}">${active?(sortDir==='asc'?'↑':'↓'):'↕'}</span>` : ''}</th>`;
+  cols.forEach(c=>{
+    if(c.key==='_cb'){
+      h+=`<th style="width:${c.w};padding:8px 4px 8px 12px"><div class="cb-wrap" onclick="selectAll(getDeptAssets())" style="padding:0"><div id="select-all-cb" class="cb${allSel?' checked':someSel?' indeterminate':''}"></div></div></th>`;
+      return;
+    }
+    const active=sortBy===c.sort;
+    h+=`<th ${c.sort?`data-sort="${c.sort}"`:''}${c.w?` style="width:${c.w}"`:''}>${c.label}${c.sort?`<span style="margin-left:4px;opacity:${active?1:.4};color:${active?'var(--accent)':'inherit'}">${active?(sortDir==='asc'?'↑':'↓'):'↕'}</span>`:''}</th>`;
   });
-  h += `</tr></thead><tbody>`;
-  if (!assets.length) {
-    h += `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--text3);padding:32px;">No assets match this filter.</td></tr>`;
-  }
-  assets.forEach(r => {
-    const ed = edits[r.id] || {};
-    const m  = { ...r, ...ed };
-    const st = statuses[r.id];
-    const sc = st ? STATUS_COLORS[st] : 'var(--bg3)';
-    const tagChanged = ed.tagNumber && ed.tagNumber !== r.tagNumber;
-    h += `<tr data-asset-id="${r.id}" style="border-left:3px solid ${sc};">
-      <td style="font-weight:700;font-family:monospace;font-size:12px;color:${tagChanged?'var(--amber)':'var(--text)'};">${m.tagNumber || r.tagNumber || '—'}</td>
-      <td style="max-width:260px;">${m.description || '—'}</td>
-      <td>${m.location || '<span style="color:var(--text4)">—</span>'}</td>
-      <td>${m.custodian ? m.custodian.split(',').reverse().join(' ') : '—'}</td>
-      <td style="font-family:monospace;font-size:11px;">${m.serialId || '—'}</td>
-      <td style="color:var(--green);font-weight:600;text-align:right;">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</td>
-      <td>${st ? `<span class="badge" style="background:${STATUS_COLORS[st]}22;color:${STATUS_COLORS[st]};border:1px solid ${STATUS_COLORS[st]}44;">${STATUS_LABELS[st]}</span>` : '<span style="color:var(--text4);font-size:11px;">—</span>'}</td>
+  h+=`</tr></thead><tbody>`;
+
+  if(!assets.length) h+=`<tr><td colspan="${cols.length}" style="text-align:center;color:var(--text3);padding:32px">No assets match this filter.</td></tr>`;
+
+  assets.forEach(r=>{
+    const ed=edits[r.id]||{}, m={...r,...ed}, st=statuses[r.id];
+    const sc=st?STATUS_COLORS[st]:'var(--bg3)', isSel=selected.has(r.id);
+    const tagChanged=ed.tagNumber&&ed.tagNumber!==r.tagNumber;
+    const custDisplay = m.custodian ? m.custodian.split(',').reverse().join(' ') : '—';
+    h+=`<tr data-asset-id="${r.id}" class="${isSel?'selected':''}" style="border-left:3px solid ${sc}">
+      <td style="width:40px;padding:8px 4px 8px 12px"><div class="cb-wrap" data-cb-id="${r.id}" style="padding:0"><div class="cb${isSel?' checked':''}"></div></div></td>
+      <td class="tag-cell" style="color:${tagChanged?'var(--amber)':'var(--text)'}">${m.tagNumber||r.tagNumber||'—'}</td>
+      <td class="desc-cell">${m.description||'—'}</td>
+      <td>${m.location||'<span style="color:var(--text4)">—</span>'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${custDisplay}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--text2)">${m.serialId||'—'}</td>
+      <td class="amt-cell">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</td>
+      <td>${st?`<span class="badge" style="background:${STATUS_COLORS[st]}22;color:${STATUS_COLORS[st]};border:1px solid ${STATUS_COLORS[st]}44">${STATUS_LABELS[st]}</span>`:'<span style="color:var(--text4);font-size:11px">—</span>'}</td>
+      <td style="width:40px">${!st?`<button class="quick-ok" title="Mark OK" style="border:none;font-size:18px;padding:4px 8px">✓</button>`:''}</td>
     </tr>`;
   });
-  h += `</tbody></table></div>`;
+  h+=`</tbody></table></div></div>`;
   return h;
 }
 
-// ═══ SEARCH ═══════════════════════════════════════════════════════════════════
-let _searchTimer = null;
-function handleSearch(val) {
-  searchQuery = val.trim();
-  document.getElementById('search-clear').style.display = searchQuery ? 'block' : 'none';
-  clearTimeout(_searchTimer);
-  _searchTimer = setTimeout(() => renderMain(), 150);
-}
-function clearSearch() {
-  searchQuery = '';
-  document.getElementById('global-search').value = '';
-  document.getElementById('search-clear').style.display = 'none';
-  renderMain();
-}
-function hl(text, q) {
-  if (!q || !text) return text || '—';
-  return String(text).replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark class="search-highlight">$1</mark>');
-}
+// ═══ SEARCH ══════════════════════════════════════════════════════════════════
+let _st=null;
+function handleSearch(val){searchQuery=val.trim();document.getElementById('search-clear').style.display=searchQuery?'block':'none';clearTimeout(_st);_st=setTimeout(()=>renderMain(),150);}
+function clearSearch(){searchQuery='';document.getElementById('global-search').value='';document.getElementById('search-clear').style.display='none';renderMain();}
+function hl(text,q){if(!q||!text)return text||'—';return String(text).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark class="hl">$1</mark>');}
+
 function renderSearch(wrap) {
-  const q   = searchQuery.toLowerCase();
-  const all = [...RAW_DATA, ...extraAssets];
-  const res = all.filter(r => {
-    const ed  = edits[r.id] || {};
-    const tag = (ed.tagNumber ?? r.tagNumber ?? '').toLowerCase();
-    return tag.includes(q) ||
-      (r.assetId || '').includes(q) ||
-      (r.description || '').toLowerCase().includes(q) ||
-      (r.serialId    || '').toLowerCase().includes(q) ||
-      (r.location    || '').toLowerCase().includes(q) ||
-      (r.custodian   || '').toLowerCase().includes(q) ||
-      (r.dept        || '').includes(q) ||
-      (DEPT_NAMES[r.dept] || '').toLowerCase().includes(q);
-  }).slice(0, 100);
+  const q=searchQuery.toLowerCase();
+  const res=allAssets().filter(r=>{
+    const ed=edits[r.id]||{}, tag=(ed.tagNumber??r.tagNumber??'').toLowerCase();
+    return tag.includes(q)||(r.assetId||'').includes(q)||(r.description||'').toLowerCase().includes(q)||
+      (r.serialId||'').toLowerCase().includes(q)||(r.location||'').toLowerCase().includes(q)||
+      (r.custodian||'').toLowerCase().includes(q)||(r.dept||'').includes(q)||(DEPT_NAMES[r.dept]||'').toLowerCase().includes(q);
+  }).slice(0,100);
 
-  let h = `<div style="margin-bottom:12px;font-size:13px;font-weight:600;color:var(--text2);">
-    ${res.length} result${res.length!==1?'s':''} for "<span style="color:var(--accent);">${searchQuery}</span>"
-    ${res.length===100?'<span style="font-size:11px;color:var(--text3);margin-left:6px;">(first 100 shown)</span>':''}
+  let h=`<div style="margin-bottom:12px;font-size:13px;font-weight:600;color:var(--text2)">
+    ${res.length} result${res.length!==1?'s':''} for "<span style="color:var(--accent)">${searchQuery}</span>"
+    ${res.length===100?'<span style="font-size:11px;color:var(--text3);margin-left:6px">(first 100)</span>':''}
   </div>`;
-
-  if (!res.length) {
-    h += `<div style="text-align:center;padding:60px 24px;color:var(--text3);">
-      <div style="font-size:32px;margin-bottom:12px;">🔍</div>
-      <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px;">No results found</div>
-      <div style="font-size:13px;">Try tag #, description, serial ID, location, custodian, or dept name.</div>
+  if(!res.length){
+    h+=`<div style="text-align:center;padding:60px 24px;color:var(--text3)">
+      <div style="font-size:32px;margin-bottom:12px">🔍</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px">No results</div>
+      <div style="font-size:13px">Try tag #, description, serial ID, location, custodian, or dept name.</div>
     </div>`;
   } else {
-    res.forEach(r => {
-      const ed = edits[r.id] || {};
-      const m  = { ...r, ...ed };
-      const st = statuses[r.id];
-      const sc = st ? STATUS_COLORS[st] : 'var(--border)';
-      const dn = DEPT_NAMES[r.dept] || '';
-      h += `<div class="asset-card" data-asset-id="${r.id}">
-        <div class="status-bar" style="background:${sc};"></div>
+    res.forEach(r=>{
+      const ed=edits[r.id]||{},m={...r,...ed},st=statuses[r.id],sc=st?STATUS_COLORS[st]:'var(--border)',dn=DEPT_NAMES[r.dept]||'';
+      h+=`<div class="asset-card" data-asset-id="${r.id}">
+        <div class="status-bar" style="background:${sc}"></div>
         <div class="card-content">
-          <div class="card-title">${hl(m.description, searchQuery)}</div>
+          <div class="card-title">${hl(m.description,searchQuery)}</div>
           <div class="card-meta">
-            <span>Tag <strong>${hl(ed.tagNumber??r.tagNumber, searchQuery)}</strong></span>
+            <span>Tag <strong>${hl(ed.tagNumber??r.tagNumber,searchQuery)}</strong></span>
             <span>· Dept ID ${r.dept}${dn?' – '+hl(dn,searchQuery):''}</span>
-            ${m.location ? `<span>· ${hl(m.location,searchQuery)}</span>` : ''}
-            ${m.custodian ? `<span style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">· ${hl(m.custodian.split(',').reverse().join(' '),searchQuery)}</span>` : ''}
-            ${m.serialId ? `<span style="font-family:monospace;">· ${hl(m.serialId,searchQuery)}</span>` : ''}
-            <span style="color:var(--green);margin-left:auto;">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</span>
-            ${st ? `<span style="color:${STATUS_COLORS[st]};font-weight:700;">· ${STATUS_LABELS[st]}</span>` : ''}
+            ${m.location?`<span>· ${hl(m.location,searchQuery)}</span>`:''}
+            ${m.custodian?`<span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">· ${hl(m.custodian.split(',').reverse().join(' '),searchQuery)}</span>`:''}
+            ${m.serialId?`<span style="font-family:monospace">· ${hl(m.serialId,searchQuery)}</span>`:''}
+            <span style="color:var(--green);margin-left:auto">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</span>
+            ${st?`<span style="color:${STATUS_COLORS[st]};font-weight:700">· ${STATUS_LABELS[st]}</span>`:''}
           </div>
         </div>
       </div>`;
     });
   }
-  wrap.innerHTML = h;
-  wrap.querySelectorAll('[data-asset-id]').forEach(el => {
-    el.addEventListener('click', () => {
-      const id = parseInt(el.dataset.assetId);
-      const all = [...RAW_DATA, ...extraAssets];
-      const asset = all.find(a => a.id === id);
-      if (asset) { selectedDept = asset.dept; showDetail(asset); }
+  wrap.innerHTML=h;
+  wrap.querySelectorAll('[data-asset-id]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const id=parseInt(el.dataset.assetId), asset=allAssets().find(a=>a.id===id);
+      if(asset){selectedDept=asset.dept;showDetail(asset);}
     });
   });
 }
 
-// ═══ ASSET DETAIL ════════════════════════════════════════════════════════════
-function showDetail(r) {
-  let ov = document.getElementById('detail-overlay');
-  if (ov) ov.remove();
-  ov = document.createElement('div');
-  ov.id = 'detail-overlay';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:50;display:flex;align-items:stretch;justify-content:flex-end;';
-  const bd = document.createElement('div');
-  bd.style.cssText = 'flex:1;background:rgba(0,0,0,.4);cursor:pointer;';
-  bd.addEventListener('click', closeDetail);
-  const panel = document.createElement('div');
-  panel.style.cssText = 'width:100%;max-width:480px;background:var(--bg);border-left:1px solid var(--border);overflow-y:auto;transform:translateX(100%);transition:transform .25s;';
-  ov.appendChild(bd);
-  ov.appendChild(panel);
-  document.body.appendChild(ov);
-  setTimeout(() => { panel.style.transform = 'translateX(0)'; }, 10);
-  renderDetail(r, panel);
+// ═══ DETAIL PANEL ════════════════════════════════════════════════════════════
+function showDetail(r){
+  let ov=document.getElementById('detail-overlay');if(ov)ov.remove();
+  ov=document.createElement('div');ov.id='detail-overlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:50;display:flex;align-items:stretch;justify-content:flex-end';
+  const bd=document.createElement('div');bd.style.cssText='flex:1;background:rgba(0,0,0,.4);cursor:pointer';
+  bd.addEventListener('click',closeDetail);
+  const panel=document.createElement('div');
+  panel.style.cssText='width:100%;max-width:500px;background:var(--bg);border-left:1px solid var(--border);overflow-y:auto;transform:translateX(100%);transition:transform .25s';
+  ov.appendChild(bd);ov.appendChild(panel);document.body.appendChild(ov);
+  setTimeout(()=>{panel.style.transform='translateX(0)';},10);
+  renderDetail(r,panel);
 }
-function closeDetail() {
-  const ov = document.getElementById('detail-overlay');
-  if (!ov) return;
-  ov.querySelector('div:last-child').style.transform = 'translateX(100%)';
-  setTimeout(() => ov.remove(), 260);
-}
+function closeDetail(){const ov=document.getElementById('detail-overlay');if(!ov)return;ov.querySelector('div:last-child').style.transform='translateX(100%)';setTimeout(()=>ov.remove(),260);}
 
-function renderDetail(r, panel) {
-  const ed  = edits[r.id] || {};
-  const m   = { ...r, ...ed };
-  const st  = statuses[r.id];
-  const tk  = TRACKER_DATA[r.dept];
-  const dn  = DEPT_NAMES[r.dept];
-  const sc  = st ? STATUS_COLORS[st] : null;
-  const tagChanged = ed.tagNumber && ed.tagNumber !== r.tagNumber;
-  const hasEd = Object.keys(ed).some(k => ed[k] !== r[k]);
+function renderDetail(r,panel){
+  const ed=edits[r.id]||{},m={...r,...ed},st=statuses[r.id],tk=TRACKER_DATA[r.dept],dn=DEPT_NAMES[r.dept];
+  const sc=st?STATUS_COLORS[st]:null,tagChanged=ed.tagNumber&&ed.tagNumber!==r.tagNumber;
+  const hasEd=Object.keys(ed).some(k=>ed[k]!==r[k]);
 
-  let h = `
-  <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);z-index:5;">
+  let h=`<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);z-index:5">
     <button class="btn icon ghost" onclick="closeDetail()">✕</button>
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Tag # ${m.tagNumber || r.tagNumber}</div>
-      <div style="font-size:11px;color:var(--text3);">Asset ID ${r.assetId} · Dept ID ${r.dept}${dn?' – '+dn:''}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Tag # ${m.tagNumber||r.tagNumber}</div>
+      <div style="font-size:11px;color:var(--text3)">Asset ID ${r.assetId} · Dept ID ${r.dept}${dn?' – '+dn:''}</div>
     </div>
-    ${sc ? `<span class="badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44;flex-shrink:0;">${STATUS_LABELS[st]}</span>` : ''}
+    ${sc?`<span class="badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44;flex-shrink:0">${STATUS_LABELS[st]}</span>`:''}
   </div>
-  <div style="padding:14px 16px;display:grid;gap:12px;">`;
+  <div style="padding:14px 16px;display:grid;gap:12px">`;
 
-  if (tk?.completed) {
-    h += `<div style="background:color-mix(in srgb,var(--green) 10%,var(--bg2));border:1px solid color-mix(in srgb,var(--green) 40%,transparent);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center;">
-      <span style="color:var(--green);font-size:18px;">✓</span>
-      <div><div style="font-size:12px;font-weight:700;color:var(--green);">Dept audit completed</div>
-      <div style="font-size:11px;color:var(--text3);">Performed ${tk.performedOn||'—'} · Completed ${tk.completedOn||'—'}${tk.found!=null?' · '+tk.found+' assets found':''}</div></div>
-    </div>`;
-  }
+  if(tk?.completed) h+=`<div style="background:color-mix(in srgb,var(--green) 10%,var(--bg2));border:1px solid color-mix(in srgb,var(--green) 40%,transparent);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center">
+    <span style="color:var(--green);font-size:18px">✓</span>
+    <div><div style="font-size:12px;font-weight:700;color:var(--green)">Dept audit completed</div>
+    <div style="font-size:11px;color:var(--text3)">Performed ${tk.performedOn||'—'} · Completed ${tk.completedOn||'—'}${tk.found!=null?' · '+tk.found+' found':''}</div></div>
+  </div>`;
 
-  h += `<div class="detail-section">
-    <div id="d-desc" style="font-size:17px;font-weight:700;line-height:1.3;margin-bottom:4px;">${m.description||'—'}</div>
-    <div style="font-size:14px;font-weight:700;color:var(--green);">${fmt$(r.amount)}</div>
-    ${hasEd?`<div style="margin-top:6px;font-size:11px;color:var(--amber);">⚠ Record has pending edits</div>`:''}
+  h+=`<div class="detail-section">
+    <div style="font-size:17px;font-weight:700;line-height:1.3;margin-bottom:4px">${m.description||'—'}</div>
+    <div style="font-size:14px;font-weight:700;color:var(--green)">${fmt$(r.amount)}</div>
+    ${hasEd?`<div style="margin-top:6px;font-size:11px;color:var(--amber)">⚠ Record has pending edits</div>`:''}
   </div>
 
-  <div class="detail-section">
-    <h3>Editable Fields</h3>
-    <div style="display:grid;gap:10px;">
-      <div>
-        <label class="label">Tag Number${tagChanged?` <span style="color:var(--amber);">— REPLACED (was ${r.tagNumber})</span>`:''}</label>
-        <input class="input detail-inp" data-field="tagNumber" value="${(m.tagNumber||'').replace(/"/g,'&quot;')}" style="font-weight:700;font-family:monospace;color:${tagChanged?'var(--amber)':'inherit'};">
-      </div>`;
-  [['Location','location'],['Custodian','custodian'],['Serial ID','serialId'],['Description','description']].forEach(([lbl,field]) => {
-    const changed = ed[field] && ed[field] !== r[field];
-    h += `<div>
-      <label class="label">${lbl}${changed?` <span style="color:var(--amber);">EDITED</span>`:''}</label>
-      <input class="input detail-inp" data-field="${field}" value="${((m[field]||'')).replace(/"/g,'&quot;')}" style="color:${changed?'var(--amber)':'inherit'};">
+  <div class="detail-section"><h3>Editable Fields</h3><div style="display:grid;gap:10px">
+    <div>
+      <label class="label">Tag Number${tagChanged?` <span style="color:var(--amber)">— REPLACED (was ${r.tagNumber})</span>`:''}</label>
+      <input class="input detail-inp" data-field="tagNumber" value="${(m.tagNumber||'').replace(/"/g,'&quot;')}" style="font-weight:700;font-family:monospace;color:${tagChanged?'var(--amber)':'inherit'}">
     </div>`;
+  [['Location','location'],['Custodian','custodian'],['Serial ID','serialId'],['Description','description']].forEach(([lbl,field])=>{
+    const changed=ed[field]&&ed[field]!==r[field];
+    h+=`<div><label class="label">${lbl}${changed?` <span style="color:var(--amber)">EDITED</span>`:''}</label>
+    <input class="input detail-inp" data-field="${field}" value="${((m[field]||'')).replace(/"/g,'&quot;')}" style="color:${changed?'var(--amber)':'inherit'}"></div>`;
   });
-  h += `<div class="field-grid" style="margin-top:4px;">
-    <div><label class="label">Asset ID</label><div style="font-size:13px;color:var(--text2);">${r.assetId}</div></div>
-    <div><label class="label">Dept ID</label><div style="font-size:13px;color:var(--text2);">${r.dept}</div></div>
-    <div><label class="label">PO Number</label><div style="font-size:13px;color:var(--text2);">${r.poNumber||'—'}</div></div>
-    <div><label class="label">In Service</label><div style="font-size:13px;color:var(--text2);">${fmtD(r.inServiceDate)}</div></div>
+  h+=`<div class="field-grid" style="margin-top:4px">
+    <div><label class="label">Asset ID</label><div style="font-size:13px;color:var(--text2)">${r.assetId}</div></div>
+    <div><label class="label">Dept ID</label><div style="font-size:13px;color:var(--text2)">${r.dept}</div></div>
+    <div><label class="label">PO Number</label><div style="font-size:13px;color:var(--text2)">${r.poNumber||'—'}</div></div>
+    <div><label class="label">In Service</label><div style="font-size:13px;color:var(--text2)">${fmtD(r.inServiceDate)}</div></div>
   </div></div></div>
 
-  <div class="detail-section">
-    <h3>Auditor Notes</h3>
-    <textarea class="input" id="d-notes" rows="3" placeholder="Condition, discrepancy, location note…" style="width:100%;">${notes[r.id]||''}</textarea>
+  <div class="detail-section"><h3>Auditor Notes</h3>
+    <textarea class="input" id="d-notes" rows="3" placeholder="Condition, discrepancy, location note…" style="width:100%">${notes[r.id]||''}</textarea>
   </div>
-  <button class="btn primary" id="d-save" style="width:100%;">Save Field Changes</button>
+  <button class="btn primary" id="d-save" style="width:100%">Save Field Changes</button>
 
-  <div class="detail-section">
-    <h3>Audit Status</h3>
-    <div style="display:grid;gap:6px;">`;
-  Object.entries(STATUS_LABELS).forEach(([key,label]) => {
-    const active = st === key;
-    h += `<button class="status-btn${active?' active':''}" data-status="${key}" ${active?`style="--sc:${STATUS_COLORS[key]}"`:''}>
-      <span class="status-dot" style="background:${STATUS_COLORS[key]};"></span>
-      ${label}
-      ${active?'<span style="margin-left:auto;">✓</span>':''}
-    </button>`;
+  <div class="detail-section"><h3>Audit Status</h3><div style="display:grid;gap:6px">`;
+  Object.entries(STATUS_LABELS).forEach(([key,label])=>{
+    const active=st===key;
+    h+=`<button class="status-btn${active?' active':''}" data-status="${key}"${active?` style="--sc:${STATUS_COLORS[key]}"`:''}><span class="status-dot" style="background:${STATUS_COLORS[key]}"></span>${label}${active?'<span style="margin-left:auto">✓</span>':''}</button>`;
   });
-  h += `</div></div></div>`;
+  h+=`</div></div></div>`;
+  panel.innerHTML=h;
 
-  panel.innerHTML = h;
-
-  const notesEl = document.getElementById('d-notes');
-  notesEl.addEventListener('change', () => { notes[r.id] = notesEl.value; saveAsset(r.id); });
-
-  document.getElementById('d-save').addEventListener('click', () => {
-    const newEd = { ...(edits[r.id] || {}) };
-    panel.querySelectorAll('.detail-inp').forEach(inp => { newEd[inp.dataset.field] = inp.value; });
-    edits[r.id] = newEd;
-    saveAsset(r.id);
-    renderMain();
-    renderSidebar();
-    renderDetail(r, panel);
-    showToast('Changes saved ✓', 'ok', 2000);
+  const ta=document.getElementById('d-notes');
+  ta.addEventListener('change',()=>{notes[r.id]=ta.value;saveAsset(r.id);});
+  document.getElementById('d-save').addEventListener('click',()=>{
+    const newEd={...(edits[r.id]||{})};
+    panel.querySelectorAll('.detail-inp').forEach(inp=>{newEd[inp.dataset.field]=inp.value;});
+    edits[r.id]=newEd;saveAsset(r.id);renderMain();renderSidebar();renderDetail(r,panel);
+    showToast('Changes saved ✓','ok',2000);
   });
-
-  panel.querySelectorAll('.status-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.status;
-      if (statuses[r.id] === key) delete statuses[r.id];
-      else statuses[r.id] = key;
-      saveAsset(r.id);
-      renderMain();
-      renderSidebar();
-      renderDetail(r, panel);
+  panel.querySelectorAll('.status-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const key=btn.dataset.status;
+      if(statuses[r.id]===key)delete statuses[r.id]; else statuses[r.id]=key;
+      saveAsset(r.id);renderMain();renderSidebar();renderDetail(r,panel);
     });
   });
 }
 
-// ═══ STATS MODAL ══════════════════════════════════════════════════════════════
-function showStats() {
-  const allAssets = [...RAW_DATA, ...extraAssets];
-  const total   = allAssets.length;
-  const audited = Object.keys(statuses).length;
-  const pct     = total ? Math.round(audited / total * 100) : 0;
+// ═══ STATS ════════════════════════════════════════════════════════════════════
+function fmtVal(n){if(n>=1e6)return '$'+(n/1e6).toFixed(1)+'M';if(n>=1e3)return '$'+(n/1e3).toFixed(0)+'K';return '$'+n.toFixed(0);}
 
-  const byStatus = {};
-  Object.values(statuses).forEach(s => { byStatus[s] = (byStatus[s]||0)+1; });
+function showStats(){
+  const tot=allAssets().length,aud=Object.keys(statuses).length,pct=tot?Math.round(aud/tot*100):0;
+  const byStatus={};Object.values(statuses).forEach(s=>{byStatus[s]=(byStatus[s]||0)+1;});
+  const prog=deptProgress();
+  const dDone=Object.values(prog).filter(p=>p.total&&p.done===p.total).length;
+  const dTot=Object.keys(prog).length;
+  const totVal=allAssets().reduce((s,r)=>s+(Number(r.amount)||0),0);
+  const editCnt=Object.values(edits).filter(e=>Object.keys(e).length>0).length;
+  const noteCnt=Object.values(notes).filter(n=>n&&n.trim()).length;
+  const deptList=Object.entries(DEPT_COUNTS).sort((a,b)=>b[1]-a[1]).slice(0,8);
 
-  const prog = deptProgress();
-  const deptsDone  = Object.values(prog).filter(p => p.total && p.done === p.total).length;
-  const deptsTotal = Object.keys(prog).length;
-
-  const totalValue = allAssets.reduce((sum, r) => sum + (Number(r.amount)||0), 0);
-  const auditedValue = allAssets
-    .filter(r => statuses[r.id])
-    .reduce((sum, r) => sum + (Number(r.amount)||0), 0);
-
-  const editCount = Object.values(edits).filter(e => Object.keys(e).length > 0).length;
-  const noteCount = Object.values(notes).filter(n => n && n.trim()).length;
-
-  // Top depts by asset count
-  const deptList = Object.entries(DEPT_COUNTS)
-    .sort((a,b) => b[1]-a[1]).slice(0,8);
-
-  let h = `<h2>📊 Audit Statistics</h2>
+  let h=`<h2>📊 Audit Statistics</h2>
   <p class="sub">FY 2025–26 Physical Inventory · As of ${new Date().toLocaleDateString()}</p>
-
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px;">
-    <div class="stat-card"><div class="stat-num">${pct}%</div><div class="stat-label">Overall Progress</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--green2);">${audited.toLocaleString()}</div><div class="stat-label">Assets Audited</div></div>
-    <div class="stat-card"><div class="stat-num">${(total-audited).toLocaleString()}</div><div class="stat-label">Remaining</div></div>
-    <div class="stat-card"><div class="stat-num">${deptsDone}</div><div class="stat-label">Depts Complete</div></div>
-    <div class="stat-card"><div class="stat-num">${deptsTotal}</div><div class="stat-label">Total Depts</div></div>
-    <div class="stat-card"><div class="stat-num">${editCount}</div><div class="stat-label">Records Edited</div></div>
-    <div class="stat-card"><div class="stat-num">${noteCount}</div><div class="stat-label">Notes Added</div></div>
-    <div class="stat-card"><div class="stat-num" style="font-size:16px;">${fmtVal(totalValue)}</div><div class="stat-label">Total Asset Value</div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:20px">
+    <div class="stat-card"><div class="stat-num">${pct}%</div><div class="stat-label">Progress</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green2)">${aud.toLocaleString()}</div><div class="stat-label">Audited</div></div>
+    <div class="stat-card"><div class="stat-num">${(tot-aud).toLocaleString()}</div><div class="stat-label">Remaining</div></div>
+    <div class="stat-card"><div class="stat-num">${dDone}/${dTot}</div><div class="stat-label">Depts Done</div></div>
+    <div class="stat-card"><div class="stat-num">${editCnt}</div><div class="stat-label">Edited</div></div>
+    <div class="stat-card"><div class="stat-num">${noteCnt}</div><div class="stat-label">Notes</div></div>
+    <div class="stat-card" style="grid-column:span 2"><div class="stat-num" style="font-size:18px">${fmtVal(totVal)}</div><div class="stat-label">Total Asset Value</div></div>
   </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-    <div>
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">By Status</div>`;
-
-  Object.entries(STATUS_LABELS).forEach(([key,lbl]) => {
-    const count = byStatus[key] || 0;
-    const pct_  = total ? Math.round(count/total*100) : 0;
-    h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="width:10px;height:10px;border-radius:50%;background:${STATUS_COLORS[key]};flex-shrink:0;"></span>
-      <span style="font-size:12px;flex:1;color:var(--text2);">${lbl}</span>
-      <span style="font-size:12px;font-weight:700;color:${STATUS_COLORS[key]};">${count}</span>
-      <span style="font-size:11px;color:var(--text3);width:32px;text-align:right;">${pct_}%</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <div><div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">By Status</div>`;
+  Object.entries(STATUS_LABELS).forEach(([key,lbl])=>{
+    const cnt=byStatus[key]||0,p=tot?Math.round(cnt/tot*100):0;
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${STATUS_COLORS[key]};flex-shrink:0"></span>
+      <span style="font-size:12px;flex:1;color:var(--text2)">${lbl}</span>
+      <span style="font-size:12px;font-weight:700;color:${STATUS_COLORS[key]}">${cnt}</span>
+      <span style="font-size:11px;color:var(--text3);width:34px;text-align:right">${p}%</span>
     </div>`;
   });
-
-  const unreviewed = total - audited;
-  h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-    <span style="width:10px;height:10px;border-radius:50%;background:var(--text4);flex-shrink:0;"></span>
-    <span style="font-size:12px;flex:1;color:var(--text2);">Unreviewed</span>
-    <span style="font-size:12px;font-weight:700;color:var(--text3);">${unreviewed}</span>
-    <span style="font-size:11px;color:var(--text3);width:32px;text-align:right;">${total?Math.round(unreviewed/total*100):0}%</span>
+  const unrev=tot-aud;
+  h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <span style="width:10px;height:10px;border-radius:50%;background:var(--text4);flex-shrink:0"></span>
+    <span style="font-size:12px;flex:1;color:var(--text2)">Unreviewed</span>
+    <span style="font-size:12px;font-weight:700;color:var(--text3)">${unrev}</span>
+    <span style="font-size:11px;color:var(--text3);width:34px;text-align:right">${tot?Math.round(unrev/tot*100):0}%</span>
   </div></div>
-
-  <div>
-    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Largest Departments</div>`;
-
-  deptList.forEach(([dept, count]) => {
-    const p_  = prog[dept] || { total: count, done: 0 };
-    const pct_ = p_.total ? Math.round(p_.done/p_.total*100) : 0;
-    h += `<div style="margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:2px;">
+  <div><div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Largest Departments</div>`;
+  deptList.forEach(([dept,count])=>{
+    const p_=prog[dept]||{total:count,done:0},pct_=p_.total?Math.round(p_.done/p_.total*100):0;
+    h+=`<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:2px">
         <span><strong>${dept}</strong> – ${DEPT_NAMES[dept]||'Unknown'}</span>
         <span>${p_.done}/${count} (${pct_}%)</span>
       </div>
-      <div class="pbar-wrap" style="height:6px;"><div class="pbar-fill" style="background:${pct_===100?'var(--green)':'var(--accent)'};width:${pct_}%;height:6px;"></div></div>
+      <div class="pbar-wrap" style="height:6px"><div class="pbar-fill" style="background:${pct_===100?'var(--green)':'var(--accent)'};width:${pct_}%;height:6px"></div></div>
     </div>`;
   });
-
-  h += `</div></div>
-  <div class="modal-footer">
-    <button class="btn primary" onclick="exportCSV()">Export CSV</button>
-    <button class="btn" onclick="document.getElementById('stats-modal').remove()">Close</button>
-  </div>`;
-
-  showModal('stats-modal', h);
+  h+=`</div></div><div class="modal-footer"><button class="btn primary" onclick="exportCSV()">⬇ Export CSV</button><button class="btn" onclick="document.getElementById('stats-modal').remove()">Close</button></div>`;
+  showModal('stats-modal',h);
 }
 
-function fmtVal(n) {
-  if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return '$' + (n/1e3).toFixed(0) + 'K';
-  return '$' + n.toFixed(0);
-}
-
-// ═══ IMPORT MODAL ════════════════════════════════════════════════════════════
-function showImport() {
-  const h = `<h2>⬆ Import New Inventory Data</h2>
-  <p class="sub">Add new assets from a CSV or XLS export. Existing audit progress is preserved.</p>
-
-  <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;">
-    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">Required CSV columns (from PeopleSoft export):</div>
-    <div class="copy-block">Asset ID, Tag Number, Dept, Descr, PO No., In Service Dt, Serial ID, Location, Custodian, Sum Amount</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:6px;">Save your PeopleSoft export as CSV before importing. Column order doesn't matter — we match by name.</div>
+// ═══ IMPORT ══════════════════════════════════════════════════════════════════
+function showImport(){
+  const h=`<h2>⬆ Import New Inventory Data</h2>
+  <p class="sub">Add new assets from a CSV export. Existing audit progress is preserved — duplicate Asset IDs are skipped.</p>
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px">Expected CSV columns (PeopleSoft export):</div>
+    <div class="copy-block" onclick="copyEl(this)">Asset ID,Tag Number,Dept,Descr,PO No.,In Service Dt,Serial ID,Location,Custodian,Sum Amount</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">Column order doesn't matter — matched by name. Save PeopleSoft export as CSV first.</div>
   </div>
-
-  <div id="import-drop" style="border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:12px;"
-    onclick="document.getElementById('import-file').click()"
-    ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-    ondragleave="this.style.borderColor='var(--border)'"
+  <div id="import-drop" class="drop-zone" onclick="document.getElementById('import-file').click()"
+    ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
     ondrop="handleImportDrop(event)">
-    <div style="font-size:32px;margin-bottom:8px;">📂</div>
-    <div style="font-size:14px;font-weight:600;color:var(--text2);">Click to choose file or drag & drop</div>
-    <div style="font-size:12px;color:var(--text3);margin-top:4px;">CSV files only</div>
+    <div style="font-size:32px;margin-bottom:8px">📂</div>
+    <div style="font-size:14px;font-weight:600;color:var(--text2)">Click to choose file or drag & drop</div>
+    <div style="font-size:12px;color:var(--text3);margin-top:4px">CSV files only</div>
   </div>
-  <input type="file" id="import-file" accept=".csv,.txt" style="display:none;" onchange="handleImportFile(this)">
-
-  <div id="import-preview" style="display:none;">
-    <div id="import-summary" style="margin-bottom:10px;"></div>
-    <div id="import-errors" style="display:none;background:color-mix(in srgb,var(--red) 10%,var(--bg2));border:1px solid color-mix(in srgb,var(--red) 30%,transparent);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#f87171;"></div>
-  </div>
-
+  <input type="file" id="import-file" accept=".csv,.txt" style="display:none" onchange="handleImportFile(this)">
+  <div id="import-preview" style="display:none;margin-top:12px"></div>
+  <div id="import-errors" style="display:none;background:color-mix(in srgb,var(--red) 10%,var(--bg2));border:1px solid color-mix(in srgb,var(--red) 30%,transparent);border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:#f87171"></div>
   <div class="modal-footer">
-    <button class="btn primary" id="import-confirm-btn" style="display:none;" onclick="confirmImport()">Import Assets</button>
+    <button class="btn primary" id="import-confirm-btn" style="display:none" onclick="confirmImport()">Import Assets</button>
     <button class="btn" onclick="document.getElementById('import-modal').remove()">Cancel</button>
   </div>`;
-
-  showModal('import-modal', h);
+  showModal('import-modal',h);
 }
 
-let _importParsed = null;
+let _importParsed=null;
+function handleImportDrop(e){e.preventDefault();document.getElementById('import-drop').classList.remove('drag');const file=e.dataTransfer.files[0];if(file)parseImportFile(file);}
+function handleImportFile(input){if(input.files[0])parseImportFile(input.files[0]);}
 
-function handleImportDrop(e) {
-  e.preventDefault();
-  document.getElementById('import-drop').style.borderColor = 'var(--border)';
-  const file = e.dataTransfer.files[0];
-  if (file) parseImportFile(file);
+function parseCSVLine(line) {
+  // Robust CSV parser that handles quoted fields containing commas
+  const result=[]; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){
+      if(inQ&&line[i+1]==='"'){cur+='"';i++;} // escaped quote
+      else inQ=!inQ;
+    } else if(ch===','&&!inQ){result.push(cur.trim());cur='';}
+    else cur+=ch;
+  }
+  result.push(cur.trim());
+  return result;
 }
-function handleImportFile(input) {
-  if (input.files[0]) parseImportFile(input.files[0]);
-}
 
-function parseImportFile(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const text = e.target.result;
-    const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 2) { showImportError('File appears empty.'); return; }
-
-    const hdr = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
-    const colMap = {
-      assetId:     hdr.findIndex(h => h.includes('asset id') || h === 'asset_id'),
-      tagNumber:   hdr.findIndex(h => h.includes('tag')),
-      dept:        hdr.findIndex(h => h === 'dept' || h === 'deptid'),
-      description: hdr.findIndex(h => h.includes('descr')),
-      poNumber:    hdr.findIndex(h => h.includes('po')),
-      inServiceDate: hdr.findIndex(h => h.includes('service') || h.includes('date')),
-      serialId:    hdr.findIndex(h => h.includes('serial')),
-      location:    hdr.findIndex(h => h.includes('location')),
-      custodian:   hdr.findIndex(h => h.includes('custodian')),
-      amount:      hdr.findIndex(h => h.includes('amount') || h.includes('value')),
+function parseImportFile(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    const lines=text.trim().split(/\r?\n/);
+    if(lines.length<2){showImportError('File appears empty.');return;}
+    const hdr=parseCSVLine(lines[0]).map(h=>h.toLowerCase().replace(/['"]/g,''));
+    const cm={
+      assetId:     hdr.findIndex(h=>h.includes('asset id')||h==='asset_id'||h==='assetid'),
+      tagNumber:   hdr.findIndex(h=>h.includes('tag')),
+      dept:        hdr.findIndex(h=>h==='dept'||h==='deptid'||h==='dept id'),
+      description: hdr.findIndex(h=>h.includes('descr')),
+      poNumber:    hdr.findIndex(h=>h.includes('po')),
+      inServiceDate:hdr.findIndex(h=>h.includes('service')||h.includes('date')),
+      serialId:    hdr.findIndex(h=>h.includes('serial')),
+      location:    hdr.findIndex(h=>h.includes('location')),
+      custodian:   hdr.findIndex(h=>h.includes('custodian')),
+      amount:      hdr.findIndex(h=>h.includes('amount')||h.includes('value')),
     };
+    const errs=[];
+    if(cm.assetId<0)errs.push('Missing: Asset ID');
+    if(cm.tagNumber<0)errs.push('Missing: Tag Number');
+    if(cm.dept<0)errs.push('Missing: Dept');
+    if(errs.length){showImportError(errs.join('<br>'));return;}
 
-    const errors = [];
-    if (colMap.assetId < 0)   errors.push('Missing column: Asset ID');
-    if (colMap.tagNumber < 0) errors.push('Missing column: Tag Number');
-    if (colMap.dept < 0)      errors.push('Missing column: Dept');
-    if (errors.length) { showImportError(errors.join('<br>')); return; }
+    const existingIds=new Set([...RAW_DATA,...extraAssets].map(r=>r.assetId));
+    const newAssets=[],skipped=[];
+    let maxId=Math.max(...RAW_DATA.map(r=>r.id),...extraAssets.map(r=>r.id),0);
 
-    const existingIds = new Set(RAW_DATA.map(r => r.assetId));
-    extraAssets.forEach(r => existingIds.add(r.assetId));
-
-    const newAssets = [], skipped = [];
-    let maxId = Math.max(...RAW_DATA.map(r => r.id), ...extraAssets.map(r => r.id), 0);
-
-    lines.slice(1).forEach((line, i) => {
-      if (!line.trim()) return;
-      const cols = parseCSVLine(line);
-      const assetId = (cols[colMap.assetId]||'').trim().replace(/^0+/,'');
-      if (!assetId) return;
-      if (existingIds.has(assetId)) { skipped.push(assetId); return; }
-      const dept = (cols[colMap.dept]||'').trim().replace(/^0+/,'') || '0';
+    lines.slice(1).forEach(line=>{
+      if(!line.trim())return;
+      const cols=parseCSVLine(line);
+      const assetId=(cols[cm.assetId]||'').replace(/^0+/,'');
+      if(!assetId)return;
+      if(existingIds.has(assetId)){skipped.push(assetId);return;}
+      const dept=(cols[cm.dept]||'').replace(/^0+/,'')||'0';
       newAssets.push({
-        id:            ++maxId,
-        assetId,
-        tagNumber:     (cols[colMap.tagNumber]||'').trim(),
-        dept,
-        description:   (cols[colMap.description]||'').trim(),
-        poNumber:      (cols[colMap.poNumber]||'').trim().replace(/\.0$/,''),
-        inServiceDate: (cols[colMap.inServiceDate]||'').trim().slice(0,10),
-        serialId:      (cols[colMap.serialId]||'').trim(),
-        location:      (cols[colMap.location]||'').trim(),
-        custodian:     (cols[colMap.custodian]||'').trim(),
-        amount:        parseFloat((cols[colMap.amount]||'0').replace(/[$,]/g,'')) || 0,
-        _imported:     true,
+        id:++maxId, assetId, tagNumber:(cols[cm.tagNumber]||'').trim(),
+        dept, description:(cols[cm.description]||'').trim(),
+        poNumber:(cols[cm.poNumber]||'').trim().replace(/\.0$/,''),
+        inServiceDate:(cols[cm.inServiceDate]||'').trim().slice(0,10),
+        serialId:(cols[cm.serialId]||'').trim(),
+        location:(cols[cm.location]||'').trim(),
+        custodian:(cols[cm.custodian]||'').trim(),
+        amount:parseFloat((cols[cm.amount]||'0').replace(/[$,]/g,''))||0,
+        _imported:true,
       });
     });
 
-    _importParsed = newAssets;
-    const preview = document.getElementById('import-preview');
-    const summary = document.getElementById('import-summary');
-    preview.style.display = 'block';
-    summary.innerHTML = `<div class="card"><div class="card-body">
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Preview</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;">
-        <div><div style="font-size:22px;font-weight:800;color:var(--green2);">${newAssets.length}</div><div class="stat-label">New assets</div></div>
-        <div><div style="font-size:22px;font-weight:800;color:var(--amber);">${skipped.length}</div><div class="stat-label">Already exist (skipped)</div></div>
-        <div><div style="font-size:22px;font-weight:800;">${[...new Set(newAssets.map(a=>a.dept))].length}</div><div class="stat-label">Departments</div></div>
+    _importParsed=newAssets;
+    const prev=document.getElementById('import-preview');
+    prev.style.display='block';
+    prev.innerHTML=`<div class="card"><div class="card-body">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px">Preview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+        <div class="stat-card"><div class="stat-num" style="color:var(--green2)">${newAssets.length}</div><div class="stat-label">New Assets</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${skipped.length}</div><div class="stat-label">Already Exist</div></div>
+        <div class="stat-card"><div class="stat-num">${[...new Set(newAssets.map(a=>a.dept))].length}</div><div class="stat-label">Departments</div></div>
       </div>
-      ${newAssets.length>0?`<div style="margin-top:10px;font-size:11px;color:var(--text3);">Sample: ${newAssets.slice(0,3).map(a=>a.description||a.assetId).join(', ')}${newAssets.length>3?'…':''}</div>`:''}
+      ${newAssets.length?`<div style="margin-top:10px;font-size:11px;color:var(--text3)">Sample: ${newAssets.slice(0,3).map(a=>a.description||a.assetId).join(', ')}${newAssets.length>3?'…':''}</div>`:''}
     </div></div>`;
-    document.getElementById('import-confirm-btn').style.display = newAssets.length ? 'block' : 'none';
-    if (!newAssets.length) {
-      summary.innerHTML += `<div style="text-align:center;color:var(--text3);padding:12px;font-size:13px;">No new assets found — all IDs already exist in the inventory.</div>`;
-    }
+    document.getElementById('import-confirm-btn').style.display=newAssets.length?'block':'none';
+    if(!newAssets.length) prev.innerHTML+=`<div style="text-align:center;color:var(--text3);padding:12px;font-size:13px">No new assets — all IDs already exist.</div>`;
   };
   reader.readAsText(file);
 }
 
-function parseCSVLine(line) {
-  const result = []; let cur = ''; let inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') { inQ = !inQ; }
-    else if (line[i] === ',' && !inQ) { result.push(cur); cur = ''; }
-    else { cur += line[i]; }
-  }
-  result.push(cur);
-  return result;
-}
-
-function showImportError(msg) {
-  const el = document.getElementById('import-errors');
-  if (el) { el.style.display='block'; el.innerHTML = '⚠ ' + msg; }
-}
-
-function confirmImport() {
-  if (!_importParsed || !_importParsed.length) return;
-  _importParsed.forEach(a => {
-    extraAssets.push(a);
-    ASSET_BY_ID[a.assetId] = a;
-    DEPT_COUNTS[a.dept] = (DEPT_COUNTS[a.dept]||0)+1;
-    if (!DEPT_NAMES[a.dept]) DEPT_NAMES[a.dept] = `Dept ${a.dept}`;
-  });
-  const count = _importParsed.length;
-  _importParsed = null;
+function showImportError(msg){const el=document.getElementById('import-errors');if(el){el.style.display='block';el.innerHTML='⚠ '+msg;}}
+function confirmImport(){
+  if(!_importParsed||!_importParsed.length)return;
+  _importParsed.forEach(a=>{extraAssets.push(a);ASSET_BY_ID[a.assetId]=a;DEPT_COUNTS[a.dept]=(DEPT_COUNTS[a.dept]||0)+1;if(!DEPT_NAMES[a.dept])DEPT_NAMES[a.dept]=`Dept ${a.dept}`;});
+  const count=_importParsed.length;_importParsed=null;
   document.getElementById('import-modal').remove();
-  renderSidebar();
-  renderMain();
-  showToast(`Imported ${count} new assets ✓`, 'ok', 3000);
+  renderSidebar();renderMain();
+  showToast(`Imported ${count} new assets ✓`,'ok',3000);
 }
 
-// ═══ SETUP MODAL ════════════════════════════════════════════════════════════
-const APPS_SCRIPT_CODE = `function doPost(e) {
+// ═══ SETUP MODAL ═════════════════════════════════════════════════════════════
+const APPS_SCRIPT_CODE=`function doPost(e) {
   try {
-    var body = (e.postData && e.postData.contents) ? e.postData.contents : '{}';
-    var data = JSON.parse(body);
-    if (data._test) return out({status:'ok',test:true});
-    var rows = data.rows || [];
-    if (!rows.length) return out({status:'ok',updated:0});
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('AuditProgress');
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(['assetId','tagNumber','dept','status','notes',
-        'editedTag','editedLocation','editedCustodian',
-        'editedSerialId','editedDescription','lastUpdated']);
-    }
-    var vals = sheet.getDataRange().getValues();
-    var idx = {};
-    for (var i=1;i<vals.length;i++) { if(vals[i][0]) idx[vals[i][0]]=i+1; }
-    var COLS = ['assetId','tagNumber','dept','status','notes','editedTag',
-      'editedLocation','editedCustodian','editedSerialId','editedDescription','lastUpdated'];
-    rows.forEach(function(row) {
-      var r = COLS.map(function(c){return row[c]!==undefined?String(row[c]):'';});
-      var ei = idx[row.assetId];
-      if (ei) sheet.getRange(ei,1,1,r.length).setValues([r]);
-      else { sheet.appendRow(r); idx[row.assetId]=sheet.getLastRow(); }
+    var body=(e.postData&&e.postData.contents)?e.postData.contents:'{}';
+    var data=JSON.parse(body);
+    if(data._test) return out({status:'ok',test:true});
+    var rows=data.rows||[];
+    if(!rows.length) return out({status:'ok',updated:0});
+    var ss=SpreadsheetApp.getActiveSpreadsheet();
+    var sheet=ss.getSheetByName('AuditProgress');
+    if(sheet.getLastRow()===0){sheet.appendRow(['assetId','tagNumber','dept','status','notes','editedTag','editedLocation','editedCustodian','editedSerialId','editedDescription','lastUpdated']);}
+    var vals=sheet.getDataRange().getValues();
+    var idx={};
+    for(var i=1;i<vals.length;i++){if(vals[i][0])idx[vals[i][0]]=i+1;}
+    var COLS=['assetId','tagNumber','dept','status','notes','editedTag','editedLocation','editedCustodian','editedSerialId','editedDescription','lastUpdated'];
+    rows.forEach(function(row){
+      var r=COLS.map(function(c){return row[c]!==undefined?String(row[c]):'';});
+      var ei=idx[row.assetId];
+      if(ei)sheet.getRange(ei,1,1,r.length).setValues([r]);
+      else{sheet.appendRow(r);idx[row.assetId]=sheet.getLastRow();}
     });
     return out({status:'ok',updated:rows.length});
-  } catch(err) { return out({status:'error',message:err.toString()}); }
+  } catch(err){return out({status:'error',message:err.toString()});}
 }
-function doGet(e) { return out({status:'ok',message:'PI Audit active'}); }
-function out(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}`;
+function doGet(e){return out({status:'ok',message:'PI Audit active'});}
+function out(obj){return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);}`;
 
-function showSetup() {
-  const h = `<h2>⚙ Setup & Connection</h2>
+function showSetup(){
+  const h=`<h2>⚙ Setup & Connection</h2>
   <p class="sub">Connect to Google Sheets for persistent, shared audit progress.</p>
-
   <div class="setup-step">
     <div class="step-num ${SHEET_ID?'done':''}">1</div>
-    <div style="flex:1;">
+    <div style="flex:1">
       <h4>Create the Google Sheet</h4>
-      <p>Create a new Google Sheet. Add two tabs named <strong>AuditProgress</strong> and <strong>Users</strong>.<br>
-      In row 1 of AuditProgress paste this header (click to copy):</p>
+      <p>Create a new Google Sheet. Add two tabs: <strong>AuditProgress</strong> and <strong>Users</strong>.<br>
+      In row 1 of AuditProgress, paste this header (click to copy):</p>
       <div class="copy-block" onclick="copyEl(this)">assetId	tagNumber	dept	status	notes	editedTag	editedLocation	editedCustodian	editedSerialId	editedDescription	lastUpdated</div>
-      <p style="margin-top:6px;">In Users row 1: <code style="background:var(--bg3);padding:2px 5px;border-radius:3px;">username	password</code> — then add your accounts in rows 2+.</p>
-      <div style="margin-top:8px;">
+      <p style="margin-top:6px">In Users row 1: <code style="background:var(--bg3);padding:2px 5px;border-radius:3px">username	password</code> · then add accounts in rows 2+.</p>
+      <div style="margin-top:10px">
         <label class="label">Spreadsheet ID</label>
-        <input class="input" id="s-sheetid" value="${SHEET_ID}" placeholder="Found in the sheet URL between /d/ and /edit" style="font-family:monospace;font-size:12px;">
+        <input class="input" id="s-sheetid" value="${SHEET_ID}" placeholder="From the URL: /spreadsheets/d/THIS_PART/edit" style="font-family:monospace;font-size:12px">
       </div>
     </div>
   </div>
-
   <div class="setup-step">
     <div class="step-num ${WEB_APP_URL?'done':''}">2</div>
-    <div style="flex:1;">
-      <h4>Add the Apps Script <span style="color:var(--red);font-size:11px;">(required for saving)</span></h4>
-      <p>In your Sheet: <strong>Extensions → Apps Script</strong>. Replace ALL code with this (click to copy), then <strong>Deploy → New deployment → Web App → Execute as Me → Access: Anyone</strong>.</p>
-      <div class="copy-block" onclick="copyEl(this)" style="max-height:90px;overflow:hidden;">${APPS_SCRIPT_CODE.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-      <p style="margin-top:6px;color:var(--red);font-size:11px;">⚠ Must create a <strong>New Deployment</strong> every time you change the code — editing existing won't work.</p>
-      <div style="margin-top:8px;">
+    <div style="flex:1">
+      <h4>Add the Apps Script <span style="color:var(--red);font-size:11px">(required for saving)</span></h4>
+      <p>In your Sheet: <strong>Extensions → Apps Script</strong>. Replace all code with this, then:<br><strong>Deploy → New deployment → Web App → Execute as: Me → Access: Anyone</strong></p>
+      <div class="copy-block" onclick="copyEl(this)" style="max-height:80px">${APPS_SCRIPT_CODE.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <p style="margin-top:6px;color:var(--amber);font-size:11px">⚠ Always create a <strong>New Deployment</strong> after code changes — editing existing won't work.</p>
+      <div style="margin-top:10px">
         <label class="label">Web App URL</label>
-        <input class="input" id="s-weburl" value="${WEB_APP_URL}" placeholder="https://script.google.com/macros/s/…/exec" style="font-family:monospace;font-size:12px;">
+        <input class="input" id="s-weburl" value="${WEB_APP_URL}" placeholder="https://script.google.com/macros/s/…/exec" style="font-family:monospace;font-size:12px">
       </div>
     </div>
   </div>
-
   <div class="setup-step">
     <div class="step-num ${API_KEY?'done':''}">3</div>
-    <div style="flex:1;">
-      <h4>Get an API Key <span style="color:var(--text3);font-size:11px;">(required for reading + login)</span></h4>
-      <p>Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → New project → Enable <strong>Google Sheets API</strong> → Credentials → Create API Key.<br>
-      Also set your Sheet sharing to <strong>"Anyone with link can view"</strong>.</p>
-      <div style="margin-top:8px;">
+    <div style="flex:1">
+      <h4>Get an API Key <span style="color:var(--text3);font-size:11px">(for reading & login)</span></h4>
+      <p>Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → create project → enable <strong>Google Sheets API</strong> → Credentials → Create API Key.<br>
+      Set the sheet to <strong>"Anyone with link can view"</strong>.</p>
+      <div style="margin-top:10px">
         <label class="label">API Key</label>
-        <input class="input" id="s-apikey" value="${API_KEY}" placeholder="AIzaSy…" style="font-family:monospace;font-size:12px;">
+        <input class="input" id="s-apikey" value="${API_KEY}" placeholder="AIzaSy…" style="font-family:monospace;font-size:12px">
       </div>
     </div>
   </div>
-
-  <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:4px;">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:4px">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn sm primary" onclick="testConn()">Test Connection</button>
       <button class="btn sm" onclick="doSync()">↻ Sync All Progress Now</button>
     </div>
-    <div id="conn-status" style="font-size:12px;color:var(--text3);display:grid;gap:3px;"></div>
+    <div id="conn-status" style="font-size:12px;color:var(--text3);display:grid;gap:3px"></div>
   </div>
-
   <div class="modal-footer">
-    <button class="btn primary" style="flex:1;" onclick="saveSetup()">Save & Connect</button>
+    <button class="btn primary" style="flex:1" onclick="saveSetup()">Save & Connect</button>
     <button class="btn" onclick="document.getElementById('setup-modal').remove()">Close</button>
     <button class="btn danger" onclick="doSignOut()">Sign Out</button>
   </div>`;
-
-  showModal('setup-modal', h);
+  showModal('setup-modal',h);
 }
 
-async function testConn() {
-  const sheetId = document.getElementById('s-sheetid')?.value.trim() || SHEET_ID;
-  const apiKey  = document.getElementById('s-apikey')?.value.trim()  || API_KEY;
-  const webUrl  = document.getElementById('s-weburl')?.value.trim()  || WEB_APP_URL;
-  const st = document.getElementById('conn-status');
-  st.innerHTML = '<div>Testing…</div>';
-
-  let readOk=false, writeOk=false, readMsg='', writeMsg='';
-
-  if (!sheetId || !apiKey) {
-    readMsg = 'Sheet ID and API Key required';
-  } else {
-    try {
-      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/AuditProgress!A1?key=${apiKey}`);
-      if (r.ok) { readOk=true; readMsg='OK'; }
-      else { const d=await r.json(); readMsg = d.error?.message || 'HTTP '+r.status; }
-    } catch(e) { readMsg = 'Network error: '+e.message; }
-  }
-
-  if (!webUrl) {
-    writeMsg = 'No Apps Script URL entered';
-  } else {
-    try {
-      const r = await fetch(webUrl, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({_test:true, rows:[]}) });
-      const text = await r.text();
-      try {
-        const d = JSON.parse(text);
-        if (d.status === 'ok') { writeOk=true; writeMsg='OK'; }
-        else writeMsg = 'Script error: ' + (d.message||text.slice(0,80));
-      } catch { writeMsg = r.ok ? 'Unexpected response (not JSON)' : 'HTTP '+r.status; }
-    } catch(e) { writeMsg = 'Cannot reach URL: ' + e.message; }
-  }
-
-  st.innerHTML = `
-    <div class="conn-row"><span class="dot ${readOk?'ok':'err'}"></span> Read (API Key + Sheet ID): ${readOk?'✓ Connected':'✗ '+readMsg}</div>
+async function testConn(){
+  const sheetId=document.getElementById('s-sheetid')?.value.trim()||SHEET_ID;
+  const apiKey=document.getElementById('s-apikey')?.value.trim()||API_KEY;
+  const webUrl=document.getElementById('s-weburl')?.value.trim()||WEB_APP_URL;
+  const st=document.getElementById('conn-status');
+  st.innerHTML='<div>Testing…</div>';
+  let readOk=false,writeOk=false,readMsg='',writeMsg='';
+  if(!sheetId||!apiKey){readMsg='Sheet ID and API Key required';}
+  else{try{const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/AuditProgress!A1?key=${apiKey}`);
+    if(r.ok){readOk=true;readMsg='OK';}else{const d=await r.json();readMsg=d.error?.message||'HTTP '+r.status;}
+  }catch(e){readMsg='Network error: '+e.message;}}
+  if(!webUrl){writeMsg='No Apps Script URL entered';}
+  else{try{
+    const r=await fetch(webUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({_test:true,rows:[]})});
+    const text=await r.text();
+    try{const d=JSON.parse(text);if(d.status==='ok'){writeOk=true;writeMsg='OK';}else writeMsg='Script error: '+(d.message||text.slice(0,60));}
+    catch{writeMsg=r.ok?'Unexpected response (not JSON)':'HTTP '+r.status;}
+  }catch(e){writeMsg='Cannot reach URL: '+e.message;}}
+  st.innerHTML=`
+    <div class="conn-row"><span class="dot ${readOk?'ok':'err'}"></span> Read (API Key + Sheet): ${readOk?'✓ Connected':'✗ '+readMsg}</div>
     <div class="conn-row"><span class="dot ${writeOk?'ok':'err'}"></span> Write (Apps Script): ${writeOk?'✓ Connected':'✗ '+writeMsg}</div>
-    ${!writeOk&&webUrl?`<div style="font-size:11px;color:var(--text3);margin-top:4px;padding-left:16px;">Make sure you created a <strong>New Deployment</strong> (not edited existing) with Execute as: Me, Access: Anyone.</div>`:''}`;
+    ${!writeOk&&webUrl?`<div style="font-size:11px;color:var(--text3);margin-top:4px;padding-left:16px">Ensure you created a <strong>New Deployment</strong> with Execute as: Me, Access: Anyone.</div>`:''}`;
 }
 
-async function saveSetup() {
-  SHEET_ID    = document.getElementById('s-sheetid')?.value.trim() || SHEET_ID;
-  API_KEY     = document.getElementById('s-apikey')?.value.trim()  || API_KEY;
-  WEB_APP_URL = document.getElementById('s-weburl')?.value.trim()  || WEB_APP_URL;
-  localStorage.setItem('sheetId', SHEET_ID);
-  localStorage.setItem('apiKey',  API_KEY);
-  localStorage.setItem('webAppUrl', WEB_APP_URL);
-  updateBanner();
-  document.getElementById('setup-modal').remove();
+async function saveSetup(){
+  SHEET_ID=document.getElementById('s-sheetid')?.value.trim()||SHEET_ID;
+  API_KEY=document.getElementById('s-apikey')?.value.trim()||API_KEY;
+  WEB_APP_URL=document.getElementById('s-weburl')?.value.trim()||WEB_APP_URL;
+  localStorage.setItem('sheetId',SHEET_ID);localStorage.setItem('apiKey',API_KEY);localStorage.setItem('webAppUrl',WEB_APP_URL);
+  updateBanner();document.getElementById('setup-modal').remove();
   await loadFromSheets();
 }
-
-async function doSync() {
-  document.getElementById('setup-modal').remove();
-  await syncAll();
-}
-
-function updateBanner() {
-  const b = document.getElementById('cfg-banner');
-  if (b) b.style.display = (SHEET_ID && API_KEY && WEB_APP_URL) ? 'none' : 'block';
-}
+async function doSync(){document.getElementById('setup-modal')?.remove();await syncAll();}
+function updateBanner(){const b=document.getElementById('cfg-banner');if(b)b.style.display=(SHEET_ID&&API_KEY&&WEB_APP_URL)?'none':'block';}
 
 // ═══ MODAL HELPER ════════════════════════════════════════════════════════════
-function showModal(id, innerHTML) {
-  const existing = document.getElementById(id);
-  if (existing) existing.remove();
-  const ov = document.createElement('div');
-  ov.id = id;
-  ov.className = 'modal-overlay';
-  const box = document.createElement('div');
-  box.className = 'modal';
-  box.innerHTML = innerHTML;
-  ov.appendChild(box);
-  document.body.appendChild(ov);
-  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+function showModal(id,innerHTML){
+  const ex=document.getElementById(id);if(ex)ex.remove();
+  const ov=document.createElement('div');ov.id=id;ov.className='modal-overlay';
+  const box=document.createElement('div');box.className='modal';box.innerHTML=innerHTML;
+  ov.appendChild(box);document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
+function copyEl(el){navigator.clipboard.writeText(el.textContent||el.innerText).then(()=>showToast('Copied ✓','ok',1500));}
 
-function copyEl(el) {
-  const text = el.textContent || el.innerText;
-  navigator.clipboard.writeText(text).then(() => showToast('Copied ✓', 'ok', 1500));
-}
-
-// ═══ EXPORT ═══════════════════════════════════════════════════════════════════
-function exportCSV() {
-  const allAssets = [...RAW_DATA, ...extraAssets];
-  const rows = ['Asset ID,Tag #,Dept ID,Div,Dept Name,Description,Location,Custodian,Serial ID,Amount,Status,Notes,Edited Fields'];
-  allAssets.forEach(r => {
-    const st  = statuses[r.id] || '';
-    const nt  = (notes[r.id]  || '').replace(/,/g,'；');
-    const ed  = edits[r.id]   || {};
-    const efl = Object.keys(ed).filter(k=>ed[k]!==r[k]).join('|');
-    if (st || nt || efl) {
-      const m = { ...r, ...ed };
-      rows.push([r.assetId, m.tagNumber||r.tagNumber, r.dept,
-        TRACKER_DATA[r.dept]?.div||'', DEPT_NAMES[r.dept]||'',
-        `"${(m.description||'').replace(/"/g,'""')}"`,
-        m.location||'', m.custodian||'', m.serialId||'',
-        r.amount, st, nt, efl].join(','));
+// ═══ EXPORT — fixed CSV with proper quoting for custodian names ══════════════
+function exportCSV(){
+  const rows=[['Asset ID','Tag #','Dept ID','Div','Dept Name','Description','Location','Custodian','Serial ID','Amount','Status','Notes','Edited Fields']];
+  const q=v=>`"${String(v||'').replace(/"/g,'""')}"`;  // always quote to handle commas in names
+  allAssets().forEach(r=>{
+    const st=statuses[r.id]||'',nt=notes[r.id]||'',ed=edits[r.id]||{};
+    const efl=Object.keys(ed).filter(k=>ed[k]!==r[k]).join('|');
+    if(st||nt||efl){
+      const m={...r,...ed};
+      rows.push([q(r.assetId),q(m.tagNumber||r.tagNumber),q(r.dept),q(TRACKER_DATA[r.dept]?.div||''),q(DEPT_NAMES[r.dept]||''),q(m.description),q(m.location),q(m.custodian),q(m.serialId),r.amount,q(st),q(nt),q(efl)]);
     }
   });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([rows.join('\n')], {type:'text/csv'}));
-  a.download = 'PI_FY25-26_Audit.csv';
-  a.click();
-  showToast('CSV exported ✓', 'ok', 2000);
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='PI_FY25-26_Audit.csv';a.click();
+  showToast('CSV exported ✓','ok',2000);
 }
 
-// ═══ TOAST ════════════════════════════════════════════════════════════════════
-let _tt = null;
-function showToast(msg, type='', dur=0) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = 'toast show' + (type ? ' '+type : '');
-  clearTimeout(_tt);
-  if (dur) _tt = setTimeout(() => { t.className = 'toast'; }, dur);
+// ═══ TOAST ═══════════════════════════════════════════════════════════════════
+let _tt=null;
+function showToast(msg,type='',dur=0){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  clearTimeout(_tt);if(dur)_tt=setTimeout(()=>{t.className='toast';},dur);
 }
 
-// ═══ AUTH ══════════════════════════════════════════════════════════════════════
-const SK = 'piaudit_sess';
-function getSession()  { try { return JSON.parse(localStorage.getItem(SK)); } catch { return null; } }
-function setSession(u) { localStorage.setItem(SK, JSON.stringify({u, ts:Date.now()})); }
-function doSignOut()   { localStorage.removeItem(SK); const m=document.getElementById('setup-modal'); if(m) m.remove(); showLogin(); }
+// ═══ AUTH ════════════════════════════════════════════════════════════════════
+const SK='piaudit_sess';
+function getSession(){try{return JSON.parse(localStorage.getItem(SK));}catch{return null;}}
+function setSession(u){localStorage.setItem(SK,JSON.stringify({u,ts:Date.now()}));}
+function doSignOut(){localStorage.removeItem(SK);document.getElementById('setup-modal')?.remove();showLogin();}
 
-async function checkCreds(u, p) {
-  if (!SHEET_ID || !API_KEY) return u==='admin' && p==='piaudit2025';
-  const rows = await sheetsGet('Users!A:B');
-  if (!rows) return false;
-  return rows.slice(1).some(r => (r[0]||'').trim().toLowerCase()===u.toLowerCase() && (r[1]||'').trim()===p);
+async function checkCreds(u,p){
+  if(!SHEET_ID||!API_KEY) return u==='admin'&&p==='piaudit2025';
+  const rows=await sheetsGet('Users!A:B');if(!rows)return false;
+  return rows.slice(1).some(r=>(r[0]||'').trim().toLowerCase()===u.toLowerCase()&&(r[1]||'').trim()===p);
 }
 
-function showLogin() {
-  document.getElementById('shell').style.display = 'none';
-  const scr = document.getElementById('login-screen');
-  scr.style.display = 'flex';
-  scr.innerHTML = `<div class="login-card">
+function showLogin(){
+  document.getElementById('shell').style.display='none';
+  const scr=document.getElementById('login-screen');scr.style.display='flex';
+  scr.innerHTML=`<div class="login-card">
     <div class="login-logo">
       <div class="brand">CSULB</div>
       <h1>Physical Inventory</h1>
       <p>FY 2025–26 · Property Management Office</p>
     </div>
     <div id="login-err"></div>
-    <input class="input" id="li-u" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false" style="margin-bottom:10px;">
-    <input class="input" id="li-p" type="password" placeholder="Password" autocomplete="current-password" style="margin-bottom:14px;">
-    <button class="btn primary" id="li-btn" style="width:100%;padding:12px;font-size:15px;">Sign In</button>
-    ${!SHEET_ID?'<p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px;">No sheet connected — use <strong>admin / piaudit2025</strong></p>':''}
+    <input class="input" id="li-u" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false" style="margin-bottom:10px">
+    <input class="input" id="li-p" type="password" placeholder="Password" autocomplete="current-password" style="margin-bottom:14px">
+    <button class="btn primary" id="li-btn" style="width:100%;padding:12px;font-size:15px">Sign In</button>
+    ${!SHEET_ID?'<p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px">No sheet connected · use <strong>admin / piaudit2025</strong></p>':''}
   </div>`;
-
-  const u=document.getElementById('li-u'), p=document.getElementById('li-p'),
-        b=document.getElementById('li-btn'), e=document.getElementById('login-err');
-
-  async function attempt() {
-    const uv=u.value.trim(), pv=p.value;
+  const u=document.getElementById('li-u'),p=document.getElementById('li-p'),b=document.getElementById('li-btn'),e=document.getElementById('login-err');
+  async function attempt(){
+    const uv=u.value.trim(),pv=p.value;
     if(!uv||!pv){e.textContent='Enter username and password.';return;}
-    b.disabled=true; b.textContent='Signing in…'; e.textContent='';
-    const ok = await checkCreds(uv, pv);
-    if (ok) {
-      setSession(uv);
-      scr.style.display='none';
-      document.getElementById('shell').style.display='flex';
-      boot();
-    } else {
-      e.textContent='Incorrect username or password.';
-      b.disabled=false; b.textContent='Sign In';
-      p.value=''; p.focus();
-    }
+    b.disabled=true;b.textContent='Signing in…';e.textContent='';
+    const ok=await checkCreds(uv,pv);
+    if(ok){setSession(uv);scr.style.display='none';document.getElementById('shell').style.display='flex';boot();}
+    else{e.textContent='Incorrect username or password.';b.disabled=false;b.textContent='Sign In';p.value='';p.focus();}
   }
-  b.addEventListener('click', attempt);
-  p.addEventListener('keydown', ev => { if(ev.key==='Enter') attempt(); });
-  u.addEventListener('keydown', ev => { if(ev.key==='Enter') p.focus(); });
-  setTimeout(()=>u.focus(), 80);
+  b.addEventListener('click',attempt);
+  p.addEventListener('keydown',ev=>{if(ev.key==='Enter')attempt();});
+  u.addEventListener('keydown',ev=>{if(ev.key==='Enter')p.focus();});
+  setTimeout(()=>u.focus(),80);
 }
 
-// ═══ BOOT ══════════════════════════════════════════════════════════════════════
-function boot() {
-  initTheme();
-  updateBanner();
-  setViewMode(viewMode);
-  renderSidebar();
-  renderMain();
-  if (SHEET_ID && API_KEY && WEB_APP_URL) loadFromSheets();
-  else document.getElementById('cfg-banner').style.display = 'block';
+// ═══ BOOT ════════════════════════════════════════════════════════════════════
+function boot(){
+  initTheme();updateBanner();setViewMode(viewMode);renderSidebar();renderMain();
+  if(SHEET_ID&&API_KEY&&WEB_APP_URL)loadFromSheets();
+  else document.getElementById('cfg-banner').style.display='block';
 }
-
 initTheme();
-if (getSession()) {
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('shell').style.display='flex';
-  boot();
-} else {
-  showLogin();
-}
+if(getSession()){document.getElementById('login-screen').style.display='none';document.getElementById('shell').style.display='flex';boot();}
+else showLogin();
 
 </script>
 </body>
