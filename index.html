@@ -362,6 +362,19 @@ a { color:var(--accent); }
 .login-logo h1 { font-size:20px; font-weight:700; color:var(--text); margin-bottom:4px; }
 .login-logo p  { font-size:12px; color:var(--text3); }
 #login-error { color:#f87171; font-size:13px; text-align:center; min-height:18px; margin-bottom:8px; }
+
+/* ── SEARCH RESULTS ── */
+.search-result-card {
+  display:flex; align-items:stretch;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:10px; overflow:hidden; margin-bottom:6px;
+  cursor:pointer; transition:border-color .12s;
+}
+.search-result-card:hover { border-color:var(--accent)80; }
+.search-result-card .status-bar { width:4px; flex-shrink:0; }
+.search-result-card .card-content { flex:1; padding:10px 12px; min-width:0; }
+.search-highlight { background:color-mix(in srgb,var(--amber) 30%,transparent); border-radius:2px; font-weight:700; }
+
 </style>
 </head>
 <body>
@@ -395,7 +408,14 @@ a { color:var(--accent); }
     <div id="cfg-banner" onclick="showSetupModal()">⚠ Google Sheets not connected — progress won't be saved. Tap to set up →</div>
     <div id="topbar">
       <button class="btn icon ghost" id="menu-btn" onclick="toggleSidebar()" style="display:none;">☰</button>
-      <div id="topbar-title" style="font-size:15px;font-weight:700;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Select a Department</div>
+      <div id="topbar-title" style="font-size:15px;font-weight:700;color:var(--text);display:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Select a Department</div>
+      <div style="flex:1;min-width:0;position:relative;">
+        <input id="global-search" class="input" placeholder="Search tag #, description, serial, location, custodian…"
+          style="padding-left:32px;font-size:13px;height:36px;"
+          oninput="handleSearch(this.value)">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:14px;">🔍</span>
+        <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;">✕</button>
+      </div>
       <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
         <div class="view-toggle" id="view-toggle">
           <button id="vt-card" class="active" onclick="setViewMode('card')" title="Card view">⊞</button>
@@ -1286,6 +1306,111 @@ if(_sess) {
 } else {
   showLogin();
 }
+
+// ═══════════════════════════════════════════════
+//  GLOBAL SEARCH
+// ═══════════════════════════════════════════════
+let searchQuery = '';
+let _searchTimer = null;
+
+function handleSearch(val) {
+  searchQuery = val.trim();
+  document.getElementById('search-clear').style.display = searchQuery ? 'block' : 'none';
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(renderSearchResults, 120);
+}
+
+function clearSearch() {
+  searchQuery = '';
+  document.getElementById('global-search').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  renderMain();
+}
+
+function highlight(text, query) {
+  if (!query || !text) return text || '—';
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(text).replace(new RegExp('(' + escaped + ')', 'gi'), '<mark class="search-highlight">$1</mark>');
+}
+
+function getSearchResults(q) {
+  const ql = q.toLowerCase();
+  return RAW_DATA.filter(r => {
+    const ed = edits[r.id] || {};
+    const tag = ed.tagNumber ?? r.tagNumber ?? '';
+    return tag.toLowerCase().includes(ql) ||
+      (r.assetId || '').includes(ql) ||
+      (r.description || '').toLowerCase().includes(ql) ||
+      (r.serialId || '').toLowerCase().includes(ql) ||
+      (r.location || '').toLowerCase().includes(ql) ||
+      (r.custodian || '').toLowerCase().includes(ql) ||
+      (r.dept || '').includes(ql) ||
+      (DEPT_NAMES[r.dept] || '').toLowerCase().includes(ql);
+  }).slice(0, 80);
+}
+
+function renderSearchResults() {
+  const wrap = document.getElementById('main-view');
+  if (!wrap) return;
+
+  if (!searchQuery) { renderMain(); return; }
+
+  const results = getSearchResults(searchQuery);
+  const q = searchQuery;
+
+  let h = `<div style="margin-bottom:12px;">
+    <span style="font-size:13px;font-weight:600;color:var(--text2);">${results.length} result${results.length!==1?'s':''} for "<span style="color:var(--accent);">${q}</span>"</span>
+    ${results.length===80?`<span style="font-size:11px;color:var(--text3);margin-left:8px;">(showing first 80)</span>`:''}
+  </div>`;
+
+  if (results.length === 0) {
+    h += `<div style="text-align:center;padding:60px 24px;color:var(--text3);">
+      <div style="font-size:32px;margin-bottom:12px;">🔍</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px;">No results found</div>
+      <div style="font-size:13px;">Try searching by tag number, description, serial ID, location, or custodian.</div>
+    </div>`;
+  } else {
+    results.forEach(r => {
+      const ed = edits[r.id] || {};
+      const merged = {...r, ...ed};
+      const st = statuses[r.id];
+      const tag = ed.tagNumber ?? r.tagNumber;
+      const stColor = st ? STATUS_COLORS[st] : 'var(--border)';
+      const dName = DEPT_NAMES[r.dept] || '';
+
+      h += `<div class="search-result-card" data-asset-id="${r.id}">
+        <div class="status-bar" style="background:${stColor};"></div>
+        <div class="card-content">
+          <div class="card-title" style="margin-bottom:4px;">${highlight(merged.description, q)}</div>
+          <div class="card-meta" style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text3);">
+            <span>Tag <strong style="color:var(--text2);">${highlight(tag, q)}</strong></span>
+            <span style="color:var(--text4);">·</span>
+            <span>Dept ID <strong>${r.dept}</strong>${dName ? ' – '+highlight(dName,q) : ''}</span>
+            ${merged.location ? `<span style="color:var(--text4);">·</span><span>${highlight(merged.location, q)}</span>` : ''}
+            ${merged.custodian ? `<span style="color:var(--text4);">·</span><span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${highlight(merged.custodian.split(',').reverse().join(' '), q)}</span>` : ''}
+            ${merged.serialId ? `<span style="color:var(--text4);">·</span><span style="font-family:monospace;">${highlight(merged.serialId, q)}</span>` : ''}
+            <span style="margin-left:auto;color:var(--green);font-weight:600;">$${Number(r.amount).toLocaleString('en-US',{maximumFractionDigits:0})}</span>
+          </div>
+          ${st ? `<div style="margin-top:4px;font-size:11px;font-weight:700;color:${STATUS_COLORS[st]};">${STATUS_LABELS[st]}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  wrap.innerHTML = h;
+
+  // Bind clicks
+  wrap.querySelectorAll('[data-asset-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.assetId);
+      const asset = RAW_DATA[id];
+      selectedAsset = asset;
+      selectedDept = asset.dept;
+      showAssetDetail(asset);
+    });
+  });
+}
+
 </script>
 </body>
 </html>
