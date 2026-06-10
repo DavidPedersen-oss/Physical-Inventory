@@ -22,6 +22,15 @@
   #config-banner { background: #1e293b; border-bottom: 2px solid #f59e0b; padding: 10px 16px; text-align: center; font-size: 12px; color: #fbbf24; font-weight: 600; }
   #config-banner a { color: #fbbf24; }
   #app { height: 100%; }
+
+  .login-wrap { position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:24px;z-index:200; }
+  .login-card { background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px 28px;width:100%;max-width:360px; }
+  .login-card input { width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:15px;margin-bottom:12px;outline:none;font-family:inherit; }
+  .login-card input:focus { border-color:#0ea5e9; }
+  .login-card button { width:100%;padding:12px;border-radius:8px;border:none;background:#0ea5e9;color:#fff;font-weight:700;font-size:15px;cursor:pointer;margin-top:4px; }
+  .login-card button:disabled { background:#1e3a5f;color:#475569;cursor:not-allowed; }
+  .login-error { color:#f87171;font-size:13px;margin-bottom:10px;text-align:center;min-height:18px; }
+
 </style>
 </head>
 <body>
@@ -752,13 +761,131 @@ function renderAsset() {
 // ═══════════════════════════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════════════════════════
-updateConfigBanner();
-render();
-if (SHEET_ID && API_KEY && localStorage.getItem('webAppUrl')) {
-  loadFromSheets();
+// (boot moved to auth flow)
+
+// ═══════════════════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════════════════
+const SESSION_KEY = 'piaudit_session';
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+}
+function setSession(username) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ username, ts: Date.now() }));
+}
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  showLoginScreen();
+}
+
+async function checkCredentials(username, password) {
+  if (!SHEET_ID || !API_KEY) {
+    // No sheet configured yet — allow a bootstrap login with hardcoded temp creds
+    return username === 'admin' && password === 'piaudit2025';
+  }
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Users!A:B?key=${API_KEY}`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return false;
+    const d = await r.json();
+    const rows = d.values || [];
+    // rows[0] is header (username, password), rows[1+] are users
+    return rows.slice(1).some(row => 
+      (row[0]||'').trim().toLowerCase() === username.toLowerCase() && 
+      (row[1]||'').trim() === password
+    );
+  } catch(e) { return false; }
+}
+
+function showLoginScreen() {
+  document.getElementById('app').innerHTML = '';
+  const existing = document.getElementById('login-screen');
+  if (existing) existing.remove();
+
+  const wrap = document.createElement('div');
+  wrap.id = 'login-screen';
+  wrap.className = 'login-wrap';
+  wrap.innerHTML = `
+    <div class="login-card">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="background:#003087;display:inline-block;border-radius:8px;padding:8px 14px;font-size:14px;font-weight:800;color:#fff;letter-spacing:.5px;margin-bottom:12px;">CSULB</div>
+        <div style="font-size:18px;font-weight:700;color:#f8fafc;">Physical Inventory</div>
+        <div style="font-size:12px;color:#475569;margin-top:4px;">FY 2025–26 · Property Management</div>
+      </div>
+      <div id="login-error" class="login-error"></div>
+      <input id="login-user" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false">
+      <input id="login-pass" type="password" placeholder="Password" autocomplete="current-password">
+      <button id="login-btn">Sign In</button>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  const userInp = document.getElementById('login-user');
+  const passInp = document.getElementById('login-pass');
+  const loginBtn = document.getElementById('login-btn');
+  const errDiv   = document.getElementById('login-error');
+
+  async function attemptLogin() {
+    const u = userInp.value.trim();
+    const p = passInp.value;
+    if (!u || !p) { errDiv.textContent = 'Enter username and password.'; return; }
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in…';
+    errDiv.textContent = '';
+    const ok = await checkCredentials(u, p);
+    if (ok) {
+      setSession(u);
+      wrap.remove();
+      bootApp();
+    } else {
+      errDiv.textContent = 'Incorrect username or password.';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+      passInp.value = '';
+      passInp.focus();
+    }
+  }
+
+  loginBtn.addEventListener('click', attemptLogin);
+  passInp.addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+  userInp.addEventListener('keydown', e => { if (e.key === 'Enter') passInp.focus(); });
+  setTimeout(() => userInp.focus(), 100);
+}
+
+function addLogoutButton() {
+  // Inject a small logout option into the config modal
+  const _origShowConfig = showConfig;
+  window.showConfig = function() {
+    _origShowConfig();
+    setTimeout(() => {
+      const modal = document.getElementById('config-modal');
+      if (!modal) return;
+      const inner = modal.querySelector('div');
+      const logoutBtn = document.createElement('button');
+      logoutBtn.textContent = 'Sign Out';
+      logoutBtn.style.cssText = 'width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;margin-top:8px;font-family:inherit;';
+      logoutBtn.addEventListener('click', () => { modal.remove(); clearSession(); });
+      inner.appendChild(logoutBtn);
+    }, 50);
+  };
+}
+
+function bootApp() {
+  updateConfigBanner();
+  render();
+  if (SHEET_ID && API_KEY && localStorage.getItem('webAppUrl')) {
+    loadFromSheets();
+  } else {
+    document.getElementById('config-banner').style.display = 'block';
+  }
+}
+
+addLogoutButton();
+const _session = getSession();
+if (_session) {
+  bootApp();
 } else {
-  // Show banner so user knows to configure
-  document.getElementById('config-banner').style.display = 'block';
+  showLoginScreen();
 }
 </script>
 </body>
