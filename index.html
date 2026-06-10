@@ -969,12 +969,17 @@ async function sheetsGet() {
 async function sheetsWrite(rows) {
   if (!WEB_APP_URL) return false;
   try {
+    // Use text/plain to avoid CORS preflight — Apps Script receives it fine
     const r = await fetch(WEB_APP_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({rows})
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ rows })
     });
     return r.ok;
-  } catch { return false; }
+  } catch(e) {
+    console.error('sheetsWrite error:', e);
+    return false;
+  }
 }
 
 async function sheetsGetUsers() {
@@ -1081,8 +1086,8 @@ async function testConnection() {
     try {
       const r = await fetch(webUrl, {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({rows:[], _test: true})
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ rows: [], _test: true })
       });
       if (r.ok) {
         writeOk = true;
@@ -1099,7 +1104,7 @@ async function testConnection() {
   html += `<div style="margin-top:4px;"><span class="dot-status ${writeOk?'ok':'err'}"></span> Write (Apps Script): ${writeOk ? '✓ OK' : '✗ ' + writeErr}</div>`;
   if (writeErr && writeErr.includes('Apps Script')) {
     html += `<div style="margin-top:6px;font-size:11px;color:var(--text3);">
-      💡 Make sure the Apps Script is deployed as a Web App with <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong>.
+      💡 Make sure Apps Script is deployed as a Web App: <strong>Execute as: Me</strong>, <strong>Access: Anyone</strong>. After ANY code change, click <strong>Deploy → New deployment</strong> (not "edit existing").
       After any code change you must create a <strong>New Deployment</strong> (not edit existing).
     </div>`;
   }
@@ -1116,26 +1121,44 @@ function showSetupModal() {
 
   const APPS_SCRIPT = `function doPost(e) {
   try {
-    var data = JSON.parse(e.postData.contents);
-    // Handle test ping
+    var body = e.postData ? e.postData.contents : '{}';
+    var data = JSON.parse(body);
+
+    // Test ping
     if (data._test) {
-      return ContentService.createTextOutput(JSON.stringify({status:'ok',test:true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return makeResponse({status:'ok', test:true});
     }
+
     var rows = data.rows || [];
     if (rows.length === 0) {
-      return ContentService.createTextOutput(JSON.stringify({status:'ok',updated:0}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return makeResponse({status:'ok', updated:0});
     }
+
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('AuditProgress');
+
+    // Ensure header row exists
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['assetId','tagNumber','dept','status','notes',
+        'editedTag','editedLocation','editedCustodian',
+        'editedSerialId','editedDescription','lastUpdated']);
+    }
+
     var existing = sheet.getDataRange().getValues();
     var rowIndex = {};
-    existing.forEach(function(row,i){ if(i>0 && row[0]) rowIndex[row[0]] = i+1; });
+    for (var i = 1; i < existing.length; i++) {
+      if (existing[i][0]) rowIndex[existing[i][0]] = i + 1;
+    }
+
     var COLS = ['assetId','tagNumber','dept','status','notes','editedTag',
-                'editedLocation','editedCustodian','editedSerialId','editedDescription','lastUpdated'];
-    rows.forEach(function(row) {
-      var vals = COLS.map(function(c){ return row[c] !== undefined ? row[c] : ''; });
+                'editedLocation','editedCustodian','editedSerialId',
+                'editedDescription','lastUpdated'];
+
+    for (var j = 0; j < rows.length; j++) {
+      var row = rows[j];
+      var vals = COLS.map(function(c) {
+        return row[c] !== undefined ? String(row[c]) : '';
+      });
       var ei = rowIndex[row.assetId];
       if (ei) {
         sheet.getRange(ei, 1, 1, vals.length).setValues([vals]);
@@ -1143,17 +1166,23 @@ function showSetupModal() {
         sheet.appendRow(vals);
         rowIndex[row.assetId] = sheet.getLastRow();
       }
-    });
-    return ContentService.createTextOutput(JSON.stringify({status:'ok',updated:rows.length}))
-      .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return makeResponse({status:'ok', updated:rows.length});
+
   } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({status:'error',message:err.toString()}))
-      .setMimeType(ContentService.MimeType.JSON);
+    return makeResponse({status:'error', message:err.toString()});
   }
 }
+
 function doGet(e) {
-  return ContentService.createTextOutput('PI Audit - write endpoint active')
-    .setMimeType(ContentService.MimeType.TEXT);
+  return makeResponse({status:'ok', message:'PI Audit endpoint active'});
+}
+
+function makeResponse(obj) {
+  var output = ContentService.createTextOutput(JSON.stringify(obj));
+  output.setMimeType(ContentService.MimeType.JSON);
+  return output;
 }`;
 
   overlay.innerHTML = `
