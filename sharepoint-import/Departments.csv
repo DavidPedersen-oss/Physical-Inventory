@@ -1,0 +1,152 @@
+Title,DeptName,DivArea,SortOrder,Completed,Phase
+70,Acad Programs & Grad Stdys,AA-AP,1,True,Phase 1 - Fall '25
+441,Acad Res & Strategic Plng,AA-ARSP,2,True,Phase 1 - Fall '25
+445,Inst Research &Analytics,AA-ARSP,3,True,Phase 1 - Fall '25
+413,CED Administration,AA-CED,4,True,Phase 1 - Fall '25
+698,Educational Leadership,AA-CED,5,True,Phase 1 - Fall '25
+10,COB Administration,AA-COB,6,True,Phase 1 - Fall '25
+12,COB Accreditation Office,AA-COB,7,True,Phase 1 - Fall '25
+20,COB Instruction,AA-COB,8,True,Phase 1 - Fall '25
+60,CarpenterPerfArtsCtr,AA-CPAC,9,True,Phase 1 - Fall '25
+65,Office of the Provost,AA-DIV,10,True,Phase 1 - Fall '25
+14,Lib Facilities Mgmt,AA-LIB,11,True,Phase 1 - Fall '25
+87,Lib ILS,AA-LIB,12,True,Phase 1 - Fall '25
+118,Lib Reserve & Media,AA-LIB,13,True,Phase 1 - Fall '25
+481,Lib Special Collections,AA-LIB,14,True,Phase 1 - Fall '25
+508,Library Computer Labs,AA-LIB,15,True,Phase 1 - Fall '25
+511,University Library,AA-LIB,16,True,Phase 1 - Fall '25
+512,Library Circulation,AA-LIB,17,True,Phase 1 - Fall '25
+513,Lib Technical Services,AA-LIB,18,True,Phase 1 - Fall '25
+514,Research & Info Services,AA-LIB,19,True,Phase 1 - Fall '25
+543,Ocean Studies,AA-OSI,20,True,Phase 1 - Fall '25
+13,Research & Economic Dev,AA-RSCH,21,True,Phase 1 - Fall '25
+51,Ctr for Community Engmnt,AA-USAA,22,True,Phase 1 - Fall '25
+505,Learning Center,AA-USAA,23,True,Phase 1 - Fall '25
+171,Beach Broadcast,ATH,24,True,Phase 1 - Fall '25
+172,Athletics Marketing&Promo,ATH,25,True,Phase 1 - Fall '25
+176,Student Athlete Hlth & Wellns,ATH,26,True,Phase 1 - Fall '25
+177,Athletics Facilities,ATH,27,True,Phase 1 - Fall '25
+178,Athletics Game Management,ATH,28,True,Phase 1 - Fall '25
+179,Department of Athletics,ATH,29,True,Phase 1 - Fall '25
+801,Men's Basketball,ATH,30,True,Phase 1 - Fall '25
+802,Women's Basketball,ATH,31,True,Phase 1 - Fall '25
+803,Baseball,ATH,32,True,Phase 1 - Fall '25
+804,Softball,ATH,33,True,Phase 1 - Fall '25
+807,Soccer,ATH,34,True,Phase 1 - Fall '25
+809,Men's Golf,ATH,35,True,Phase 1 - Fall '25
+104,FM Information Systems,DAF-FM,36,True,Phase 1 - Fall '25
+212,Controller's Office,DAF-FM,37,True,Phase 1 - Fall '25
+725,Student Financial Svcs,DAF-FM,38,True,Phase 1 - Fall '25
+664,Human Resources Mgmt,DAF-HRM,39,True,Phase 1 - Fall '25
+744,UPAdministrative Svcs,DAF-UP,40,True,Phase 1 - Fall '25
+745,University Police,DAF-UP,41,True,Phase 1 - Fall '25
+767,Admin & Finance Div of,DAF-VPAF,42,True,Phase 1 - Fall '25
+132,Univ Outrch & Schl Reltns,DSA-ES,43,True,Phase 1 - Fall '25
+771,Enrollment Services,DSA-ES,44,True,Phase 1 - Fall '25
+123,Housing & Residentl Life,DSA-HL,45,True,Phase 1 - Fall '25
+120,Student Affrs Div Support,DSA-SA,46,True,Phase 1 - Fall '25
+122,Student Health Services,DSA-SA,47,True,Phase 1 - Fall '25
+125,Student Life and Developmnt,DSA-SA,48,True,Phase 1 - Fall '25
+126,New Student & Family Pgm,DSA-SA,49,True,Phase 1 - Fall '25
+131,Bob Murphy Access Center,DSA-SA,50,True,Phase 1 - Fall '25
+136,Career Development Ctr,DSA-SA,51,True,Phase 1 - Fall '25
+145,Basic Needs,DSA-SA,52,True,Phase 1 - Fall '25
+147,Health & Wellness Admin,DSA-SA,53,True,Phase 1 - Fall '25
+711,President Office of the,PRES,54,True,Phase 1 - Fall '25
+22,Univ Relations & Dvlpmt,URD,55,True,Phase 1 - Fall '25
+35,University Relations,URD,56,True,Phase 1 - Fall '25
+742,Alumni Relations,URD,57,True,Phase 1 - Fall '25
+765,Strategic Communications,URD,58,True,Phase 1 - Fall '25
+2,Academic Technology Svcs,AA-ATS,59,False,Phase 2 - Spring '26
+21,Instr'l Tchnlgy Supp Svcs,AA-ATS,60,False,Phase 2 - Spring '26
+91,Tchnlgy Support Services,AA-ATS,61,False,Phase 2 - Spring '26
+422,Stdnt Perceptn of Teacher,AA-ATS,62,False,Phase 2 - Spring '26
+509,Innovation Lab,AA-ATS,63,False,Phase 2 - Spring '26
+521,Classroom Supp Services,AA-ATS,64,False,Phase 2 - Spring '26
+532,Faculty Instr Techn Supp,AA-ATS,65,False,Phase 2 - Spring '26
+52,Human Development,AA-CLA,66,True,Phase 2 - Spring '26
+116,Journalism,AA-CLA,67,True,Phase 2 - Spring '26
+234,Rom Germ Russ Lang & Lit,AA-CLA,68,True,Phase 2 - Spring '26
+300,Communication Studies,AA-CLA,69,True,Phase 2 - Spring '26
+350,Psychology,AA-CLA,70,False,Phase 2 - Spring '26
+356,Linguistics,AA-CLA,71,True,Phase 2 - Spring '26
+360,CLA Technical Services,AA-CLA,72,True,Phase 2 - Spring '26
+365,Global Studies,AA-CLA,73,True,Phase 2 - Spring '26
+377,Anthropology,AA-CLA,74,True,Phase 2 - Spring '26
+379,Economics,AA-CLA,75,True,Phase 2 - Spring '26
+381,Geography,AA-CLA,76,False,Phase 2 - Spring '26
+382,Political Science,AA-CLA,77,True,Phase 2 - Spring '26
+117,Cinematic Arts,AA-COTA,78,True,Phase 2 - Spring '26
+214,Art,AA-COTA,79,False,Phase 2 - Spring '26
+215,Design,AA-COTA,80,True,Phase 2 - Spring '26
+217,Music,AA-COTA,81,False,Phase 2 - Spring '26
+219,Theatre Arts,AA-COTA,82,False,Phase 2 - Spring '26
+220,Dance,AA-COTA,83,True,Phase 2 - Spring '26
+221,Kleefeld Contemporary Art,AA-COTA,84,False,Phase 2 - Spring '26
+270,Advanced Media Productions,AA-COTA,85,True,Phase 2 - Spring '26
+415,COTA Administration,AA-COTA,86,False,Phase 2 - Spring '26
+6,CPaCE Administrative Services,AA-CPACE,87,True,Phase 2 - Spring '26
+7,CPaCE Info Technology Services,AA-CPACE,88,True,Phase 2 - Spring '26
+722,CPaCE Financial Management,AA-CPACE,89,True,Phase 2 - Spring '26
+550,Operations,DAF-PO,90,True,Phase 2 - Spring '26
+551,Copier Program,DAF-PO,91,True,Phase 2 - Spring '26
+756,Parking & Traffic Enfrmnt,DAF-PO,92,False,Phase 2 - Spring '26
+763,Parking Administration,DAF-PO,93,False,Phase 2 - Spring '26
+791,Print Shop Production,DAF-PO,94,True,Phase 2 - Spring '26
+708,ITS Information Security,DOIT,95,False,Phase 2 - Spring '26
+28,ITS Servers Systems & Web,DOIT,96,False,Phase 2 - Spring '26
+501,ITS Data Ctr &Emgncy Mgmt,DOIT,97,False,Phase 2 - Spring '26
+531,Division of Info Tech (DOIT),DOIT,98,False,Phase 2 - Spring '26
+752,ITS Network Telecom & Sec,DOIT,99,False,Phase 2 - Spring '26
+753,ITS Svcs Mgmt &Operations,DOIT,100,False,Phase 2 - Spring '26
+252,Health Science,AA-CHHS,101,False,Phase 3 - Fall '26
+254,Nursing,AA-CHHS,102,False,Phase 3 - Fall '26
+259,CHHS Academic Support,AA-CHHS,103,False,Phase 3 - Fall '26
+263,Physical Therapy,AA-CHHS,104,False,Phase 3 - Fall '26
+264,Kinesiology,AA-CHHS,105,False,Phase 3 - Fall '26
+269,Health Care Management,AA-CHHS,106,False,Phase 3 - Fall '26
+282,Family & Consumer Science,AA-CHHS,107,False,Phase 3 - Fall '26
+305,Speech Language Pathology,AA-CHHS,108,False,Phase 3 - Fall '26
+368,Recreation & Leisure Stdy,AA-CHHS,109,False,Phase 3 - Fall '26
+384,"Criminology,Crim Just,Emer Mgt",AA-CHHS,110,False,Phase 3 - Fall '26
+410,CHHS Administration,AA-CHHS,111,False,Phase 3 - Fall '26
+411,CHHS Instruction,AA-CHHS,112,False,Phase 3 - Fall '26
+743,Burns Miller Japanese Gdn,AA-CHHS,113,False,Phase 3 - Fall '26
+57,Biological Sciences,AA-CNSM,114,False,Phase 3 - Fall '26
+314,Mathematics & Statistics,AA-CNSM,115,False,Phase 3 - Fall '26
+323,Jensen SAS Center,AA-CNSM,116,False,Phase 3 - Fall '26
+324,Shark Beach Safety,AA-CNSM,117,False,Phase 3 - Fall '26
+325,Physics & Astronomy,AA-CNSM,118,False,Phase 3 - Fall '26
+328,Chemistry/Biochem,AA-CNSM,119,False,Phase 3 - Fall '26
+337,Earth Science,AA-CNSM,120,False,Phase 3 - Fall '26
+396,Science Education,AA-CNSM,121,False,Phase 3 - Fall '26
+412,CNSM Instruction,AA-CNSM,122,False,Phase 3 - Fall '26
+419,IIRMES,AA-CNSM,123,False,Phase 3 - Fall '26
+420,CNSM Administration,AA-CNSM,124,False,Phase 3 - Fall '26
+180,COE Instruction,AA-COE,125,False,Phase 3 - Fall '26
+181,COE Administration,AA-COE,126,False,Phase 3 - Fall '26
+182,Computer Eng/Science,AA-COE,127,False,Phase 3 - Fall '26
+183,Biomedical Engineering,AA-COE,128,False,Phase 3 - Fall '26
+187,Chemical Engineering,AA-COE,129,False,Phase 3 - Fall '26
+189,Civ Eng & Const Eng Mgmt,AA-COE,130,False,Phase 3 - Fall '26
+190,Electrical Engineering,AA-COE,131,False,Phase 3 - Fall '26
+191,Mechanical&Aerospace Engr,AA-COE,132,False,Phase 3 - Fall '26
+591,Envirmntl Health & Safety,DAF-BBS,133,False,Phase 3 - Fall '26
+700,Deferred Maintenance,DAF-BBS,134,False,Phase 3 - Fall '26
+701,University Wide Utilities,DAF-BBS,135,False,Phase 3 - Fall '26
+712,BBS-Construction Management,DAF-BBS,136,False,Phase 3 - Fall '26
+715,BBS Mgmt,DAF-BBS,137,False,Phase 3 - Fall '26
+717,Facilities Mgmt,DAF-BBS,138,False,Phase 3 - Fall '26
+755,FM Motor Vehicles,DAF-BBS,139,False,Phase 3 - Fall '26
+781,Facilities Services,DAF-BBS,140,False,Phase 3 - Fall '26
+782,Night Building Services,DAF-BBS,141,False,Phase 3 - Fall '26
+783,FM Engineering Services,DAF-BBS,142,False,Phase 3 - Fall '26
+784,FM Grounds,DAF-BBS,143,False,Phase 3 - Fall '26
+785,FM Custodial,DAF-BBS,144,False,Phase 3 - Fall '26
+786,Facilities Operation,DAF-BBS,145,False,Phase 3 - Fall '26
+787,Design &Construction Svcs,DAF-BBS,146,False,Phase 3 - Fall '26
+710,,UNASSIGNED,147,False,
+727,,UNASSIGNED,148,False,
+741,,UNASSIGNED,149,False,
+796,,UNASSIGNED,150,False,
+823,,UNASSIGNED,151,False,
