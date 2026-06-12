@@ -1,8 +1,8 @@
 /* Beach Property service worker — cache-first app shell for offline field use */
-const CACHE = 'beachprop-v1';
+const CACHE = 'beachprop-v2';
 const SHELL = [
   './', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png',
-  'seed/assets.json', 'seed/departments.json',
+  'seed/assets.json', 'seed/departments.json', 'seed/disposed.json', 'seed/users.json',
   'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];

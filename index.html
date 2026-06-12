@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Beach Property — CSULB Asset Inventory</title>
+<title>Beach Asset Management — CSULB Property Management</title>
 <meta name="description" content="CSULB Property Management asset lookup and physical inventory portal">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16160F">
@@ -14,14 +14,15 @@
 <style>
 /* ============ Tokens ============ */
 :root{
-  --gold:#FFB81C; --gold-deep:#8A6D00; --gold-soft:#FFF3D6;
+  --gold:#FFC72C; --gold-deep:#806000; --gold-soft:#FFF6DC;
   --rowH:42px; --radius:10px; --nav-h:60px;
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
 }
 [data-theme="light"]{
-  --bg:#F4F4F1; --surface:#FFFFFF; --surface2:#FAFAF7; --ink:#1C1C17; --ink2:#5A5A50;
-  --line:#E2E1D8; --line2:#D0CFC4; --accent:#8A6D00; --accent-fill:#FFB81C; --accent-soft:#FFF3D6;
+  /* CSULB brand: begin with white, add yellow + black; gray (70% black) body copy */
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface2:#F8F8F6; --ink:#111111; --ink2:#4D4D4D;
+  --line:#E9E9E4; --line2:#D8D8D0; --accent:#806000; --accent-fill:#FFC72C; --accent-soft:#FFF6DC;
   --ok:#2E7D32; --ok-bg:#E5F2E6; --bad:#C62828; --bad-bg:#FBE7E7; --warn:#9A6700; --warn-bg:#FFF1D6;
   --dmg:#7B2FA2; --dmg-bg:#F3E8FA; --oth:#4A6572; --oth-bg:#E8EEF1; --un:#6B6B60; --un-bg:#EDEDE7;
   --shadow:0 8px 28px rgba(28,28,23,.14); --header-bg:#16160F; --header-ink:#F4F2E8;
@@ -31,6 +32,7 @@
   --line:#33332A; --line2:#44443A; --accent:#FFC845; --accent-fill:#FFB81C; --accent-soft:#3A3115;
   --ok:#6BC974; --ok-bg:#1E3A21; --bad:#FF8A7E; --bad-bg:#46211F; --warn:#FFC257; --warn-bg:#413312;
   --dmg:#CE93E8; --dmg-bg:#371F44; --oth:#9FB6C1; --oth-bg:#23313A; --un:#8E8C7E; --un-bg:#2A2A22;
+  --accent-fill:#FFC72C;
   --shadow:0 8px 28px rgba(0,0,0,.5); --header-bg:#0E0E09; --header-ink:#F4F2E8;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -136,6 +138,19 @@ main{flex:1;overflow-y:auto;min-width:0;padding:18px 22px 90px;-webkit-overflow-
 .st-Unreviewed{background:var(--un-bg);color:var(--un)} .st-VerifiedOK{background:var(--ok-bg);color:var(--ok)}
 .st-NotFound{background:var(--bad-bg);color:var(--bad)} .st-WrongLocation{background:var(--warn-bg);color:var(--warn)}
 .st-Damaged{background:var(--dmg-bg);color:var(--dmg)} .st-Other{background:var(--oth-bg);color:var(--oth)}
+.st-Disposed{background:var(--header-bg);color:#C9C7B8}
+.srv-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-fill)}
+/* lifecycle segmented toggle */
+.lc-seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:99px;overflow:hidden;background:var(--surface)}
+.lc-seg button{padding:7px 15px;font-size:12.5px;font-weight:700;letter-spacing:.03em;color:var(--ink2);min-height:36px}
+.lc-seg button.on{background:var(--ink);color:var(--accent-fill)}
+/* autofill suggestions */
+.sugg-wrap{position:relative}
+.sugg{position:absolute;left:0;right:0;top:calc(100% + 3px);background:var(--surface);border:1px solid var(--line2);border-radius:9px;box-shadow:var(--shadow);z-index:120;max-height:218px;overflow-y:auto}
+.sugg button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:9px 12px;font-size:13.5px;border-bottom:1px solid var(--line)}
+.sugg button:hover,.sugg button.hot{background:var(--accent-soft)}
+.sugg .freq{color:var(--ink2);font-size:11px;font-family:var(--mono)}
+.srv-card{border-left:3px solid var(--accent-fill);background:var(--surface2);border-radius:0 9px 9px 0;padding:9px 12px;margin:7px 0;font-size:12.5px;line-height:1.45}
 
 /* ============ Departments ============ */
 .div-h{display:flex;align-items:center;gap:10px;margin:20px 0 9px;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.1em;color:var(--ink2)}
@@ -240,22 +255,13 @@ table.plain th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;co
 <div id="login">
   <div class="login-card">
     <div class="brand-mark"><span class="brand-tag">CSULB&nbsp;PM</span></div>
-    <h1>Beach Property</h1>
-    <div class="sub">Asset lookup &amp; physical inventory · FY 2025–26</div>
+    <h1>Beach Asset Management</h1>
+    <div class="sub">Property Management Office · lookup, physical inventory, surveys &amp; disposals</div>
     <div id="loginForm">
       <div class="field"><label for="lgU">Username</label><input id="lgU" autocomplete="username" autocapitalize="none"></div>
       <div class="field"><label for="lgP">Password</label><input id="lgP" type="password" autocomplete="current-password"></div>
       <button class="btn btn-gold btn-block" id="lgGo">Sign in</button>
       <div class="login-err" id="lgErr"></div>
-    </div>
-    <div id="firstRun" class="hidden">
-      <div class="note">No accounts exist yet on this device. Create the first <b>admin</b> account. You can push it to the SharePoint Users list later from the Users screen.</div>
-      <div class="field"><label for="frU">Username</label><input id="frU" autocapitalize="none"></div>
-      <div class="field"><label for="frN">Display name</label><input id="frN" placeholder="e.g. David R."></div>
-      <div class="field"><label for="frP">Password</label><input id="frP" type="password"></div>
-      <div class="field"><label for="frP2">Confirm password</label><input id="frP2" type="password"></div>
-      <button class="btn btn-gold btn-block" id="frGo">Create admin account</button>
-      <div class="login-err" id="frErr"></div>
     </div>
   </div>
 </div>
@@ -264,7 +270,7 @@ table.plain th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;co
 <div id="app">
   <header class="top">
     <span class="brand-tag">CSULB&nbsp;PM</span>
-    <span class="ttl">Beach Property · FY 25–26</span>
+    <span class="ttl">Beach Asset Management</span>
     <span class="grow"></span>
     <button class="sync-chip" id="syncChip" title="Sync status — tap to sync now"><span class="dot"></span><span id="syncTxt">Sync off</span></button>
     <span class="user-pill"><span class="uname" id="whoami"></span>
@@ -284,7 +290,7 @@ table.plain th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;co
 
 <script>
 /* ================================================================
-   Beach Property — CSULB asset inventory portal
+   Beach Asset Management — CSULB Property Management Office
    Static app · GitHub Pages · SharePoint via Power Automate
    ================================================================ */
 'use strict';
@@ -309,7 +315,10 @@ function confirmDlg(title,body,okLabel,danger){return new Promise(res=>{
 /* ---------------- state ---------------- */
 const ST={assets:new Map(),depts:[],deptMap:{},users:[],session:null,sel:new Set(),
   cfg:{getUrl:'',postUrl:'',key:''},route:{v:'search'},theme:'light',pending:0,lastSync:'',syncLog:[],
-  q:'',scope:'all',deptView:{},sort:{k:'tag',dir:1},flt:{q:'',status:'',div:'',dept:'',noloc:false},busy:false};
+  q:'',scope:'all',deptView:{},sort:{k:'tag',dir:1},flt:{q:'',status:'',div:'',dept:'',noloc:false,survey:false},busy:false,lc:'A'};
+const lcPass=a=>ST.lc==='ALL'||(ST.lc==='D'?a.lc==='D':a.lc!=='D');
+function lcSeg(){return `<span class="lc-seg">${[['A','Active'],['ALL','All'],['D','Disposed']].map(([k,l])=>`<button data-lc="${k}" class="${ST.lc===k?'on':''}">${l}</button>`).join('')}</span>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-lc]');if(b){ST.lc=b.dataset.lc;ST.sel.clear();render()}});
 
 /* ---------------- IndexedDB ---------------- */
 let idb;
@@ -356,7 +365,19 @@ async function boot(){
       toast(`Loaded ${a.length.toLocaleString()} seed assets`);
     }catch(e){console.warn('seed load failed',e)}
   }
-  assets.forEach(a=>ST.assets.set(a.id,a));
+  assets.forEach(a=>{if(!a.lc)a.lc='A';if(!a.survey)a.survey=[];ST.assets.set(a.id,a)});
+  if(![...ST.assets.values()].some(a=>a.lc==='D')){
+    try{
+      const disp=await fetch('seed/disposed.json').then(r=>r.json());
+      const add=disp.filter(d=>!ST.assets.has(d.id));
+      add.forEach(a=>ST.assets.set(a.id,a));await dbPutAssets(add);
+      toast(`Loaded ${add.length.toLocaleString()} disposed/retired assets`);
+    }catch(e){console.warn('disposed seed load failed',e)}
+  }
+  if(!ST.users.length){
+    try{ST.users=await fetch('seed/users.json').then(r=>r.json());await kvSet('users',ST.users)}
+    catch(e){console.warn('users seed load failed',e)}
+  }
   ST.depts.forEach(d=>ST.deptMap[d.deptId]=d);
   ST.pending=(await qAll()).filter(o=>!o.done).length;
   if(!window.crypto||!crypto.subtle){
@@ -364,8 +385,7 @@ async function boot(){
     $('#lgGo').disabled=true;
   }
   const sess=await kvGet('session');
-  const haveUsers=ST.users.length>0;
-  if(!haveUsers){$('#loginForm').classList.add('hidden');$('#firstRun').classList.remove('hidden')}
+  if(!ST.users.length)$('#lgErr').textContent='Could not load accounts — check that seed/users.json deployed with the app.';
   if(sess&&sess.exp>Date.now()&&(ST.users.find(u=>u.username===sess.u)||sess.local)){ST.session=sess;enterApp()}
 }
 async function doLogin(){
@@ -381,18 +401,6 @@ async function doLogin(){
     await kvSet('session',ST.session);enterApp();
   }finally{$('#lgGo').disabled=false;$('#lgGo').textContent='Sign in'}
 }
-async function firstRunCreate(){
-  const un=$('#frU').value.trim(),nm=$('#frN').value.trim(),p1=$('#frP').value,p2=$('#frP2').value;
-  const err=$('#frErr');err.textContent='';
-  if(!un||!p1){err.textContent='Username and password are required.';return}
-  if(p1!==p2){err.textContent='Passwords do not match.';return}
-  if(p1.length<8){err.textContent='Use at least 8 characters.';return}
-  const salt=randSalt(),hash=await pbkdf2(p1,salt);
-  ST.users.push({username:un,display:nm||un,role:'admin',salt,hash,active:'Yes',local:true});
-  await kvSet('users',ST.users);
-  ST.session={u:un,name:nm||un,role:'admin',exp:Date.now()+12*3600*1000,local:true};
-  await kvSet('session',ST.session);enterApp();
-}
 function logout(){kvSet('session',null);location.reload()}
 
 /* ---------------- save + queue ---------------- */
@@ -403,6 +411,7 @@ async function saveAsset(a,changes,silent){
   a.updatedAt=nowStr();a.updatedBy=ST.session?ST.session.name:'?';
   (changes||[]).forEach(c=>{(a.history=a.history||[]).push({f:c.f,old:c.old,new:c.new,t:a.updatedAt,u:a.updatedBy})});
   ST.assets.set(a.id,a);await dbPutAsset(a);
+  if(a.lc==='D'){syncChip();return} // disposal records are local reference data — not synced
   const ops=await qAll();
   const ex=ops.find(o=>!o.done&&o.kind==='upsert'&&o.payload.id===a.id);
   if(ex){ex.payload=spShape(a);await qPut(ex)}else{await qAdd({kind:'upsert',payload:spShape(a),t:nowStr()})}
@@ -467,15 +476,17 @@ async function pullData(){
     for(const raw of j.assets){
       const id=String(raw.id??'').trim();if(!id||pendingIds.has(id))continue;
       let hist=[];try{hist=typeof raw.history==='string'?JSON.parse(raw.history||'[]'):(raw.history||[])}catch(e){}
+      const old=ST.assets.get(id);
       put.push({id,tag:raw.tag??'',dept:String(raw.dept??''),deptName:raw.deptName??'',div:raw.div??'',desc:raw.desc??'',
         serial:raw.serial??'',location:raw.location??'',custodian:raw.custodian??'',category:raw.category??'',
         acqDate:raw.acqDate??'',inServiceDt:raw.inServiceDt??'',po:raw.po??'',value:Number(raw.value)||0,
-        status:raw.status||'Unreviewed',notes:raw.notes??'',updatedBy:raw.updatedBy??'',updatedAt:raw.updatedAt??'',history:hist});
+        status:raw.status||'Unreviewed',notes:raw.notes??'',updatedBy:raw.updatedBy??'',updatedAt:raw.updatedAt??'',history:hist,
+        lc:'A',survey:old?.survey||[],retireDate:'',netBook:0});
     }
     put.forEach(a=>ST.assets.set(a.id,a));await dbPutAssets(put);merged=put.length;
   }
   if(Array.isArray(j.departments)&&j.departments.length){
-    ST.depts=j.departments.map((d,i)=>({deptId:String(d.deptId??''),name:d.name??'',div:d.div??'',sortOrder:Number(d.sortOrder)||i+1,completed:String(d.completed).toLowerCase()==='true'||d.completed===true}));
+    ST.depts=j.departments.map((d,i)=>({deptId:String(d.deptId??''),name:d.name??'',div:d.div??'',sortOrder:Number(d.sortOrder)||i+1,completed:!!d.completed}));
     ST.deptMap={};ST.depts.forEach(d=>ST.deptMap[d.deptId]=d);await kvSet('depts',ST.depts);
   }
   if(Array.isArray(j.users)&&j.users.length){
@@ -495,16 +506,17 @@ async function testConnection(){
 }
 /* ---------------- nav + router ---------------- */
 const I={search:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>',
-dept:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>',
+pi:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 4h6v3H9zM7 5H5v16h14V5h-2"/><path d="m8.5 13 2.2 2.2L15.5 10"/></svg>',
 grid:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 5h18M3 10h18M3 15h18M3 20h18"/></svg>',
 stats:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>',
 more:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>'};
-const NAV=[['search','Search',I.search],['depts','Departments',I.dept],['assets','All Assets',I.grid],['stats','Dashboard',I.stats]];
-const TOOLS=[['import','Import data'],['export','Export results'],['users','Users'],['settings','Settings']];
+const NAV=[['search','Search',I.search],['depts','Physical Inventory',I.pi],['assets','All Assets',I.grid],['stats','Dashboard',I.stats]];
+const NAV_M=[['search','Search',I.search],['depts','Inventory',I.pi],['assets','Assets',I.grid],['stats','Dashboard',I.stats]];
+const TOOLS=[['import','Import data'],['export','Export'],['users','Users'],['settings','Settings']];
 function buildNav(){
   $('#sideNav').innerHTML=NAV.map(([v,l,ic])=>`<button class="nav-it" data-nav="${v}">${ic}${l}</button>`).join('')
     +`<div class="nav-sec">Tools</div>`+TOOLS.map(([v,l])=>`<button class="nav-it" data-nav="${v}">${l}</button>`).join('');
-  $('#botNav').innerHTML=NAV.map(([v,l,ic])=>`<button class="nav-it" data-nav="${v}">${ic}${l}</button>`).join('')
+  $('#botNav').innerHTML=NAV_M.map(([v,l,ic])=>`<button class="nav-it" data-nav="${v}">${ic}${l}</button>`).join('')
     +`<button class="nav-it" data-nav="more">${I.more}More</button>`;
   document.addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(b)location.hash='#/'+b.dataset.nav});
 }
@@ -520,23 +532,26 @@ function enterApp(){
 /* ---------------- shared bits ---------------- */
 function deptLabel(id){const d=ST.deptMap[id];return d&&d.name?d.name:('Dept '+id)}
 function deptPad(id){return String(id).padStart(5,'0')}
+const srvBadge=a=>(a.survey&&a.survey.length)?`<span class="srv-badge" title="Survey record(s) on file">⚑ Survey ×${a.survey.length}</span>`:'';
 function assetCard(a,opts={}){
-  const ok=a.status==='Verified OK';
+  const disp=a.lc==='D',ok=a.status==='Verified OK';
   return `<div class="card acard" data-aid="${esc(a.id)}">
-    ${opts.check?`<input type="checkbox" class="ck" data-ck="${esc(a.id)}" ${ST.sel.has(a.id)?'checked':''}>`:''}
+    ${opts.check&&!disp?`<input type="checkbox" class="ck" data-ck="${esc(a.id)}" ${ST.sel.has(a.id)?'checked':''}>`:''}
     <div class="body" data-open="${esc(a.id)}">
-      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="tagchip">${esc(a.tag)}</span>${pill(a.status)}</div>
+      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="tagchip">${esc(a.tag)||'<span class="muted">no tag</span>'}</span>${pill(disp?'Disposed':a.status)}${srvBadge(a)}</div>
       <div class="desc">${esc(a.desc)}</div>
-      <div class="kv"><span>📍 <b>${esc(a.location)||'<i class="muted">no location</i>'}</b></span>
-        <span>👤 ${esc(a.custodian)||'<i>—</i>'}</span><span>${esc(deptLabel(a.dept))}</span><span class="mono">${fmt$(a.value)}</span></div>
+      <div class="kv">${disp
+        ?`<span>Retired <b class="mono">${esc(a.retireDate)||'—'}</b></span><span>${esc(a.deptName||deptLabel(a.dept))}</span><span class="mono">${fmt$(a.value)}</span>`
+        :`<span>📍 <b>${esc(a.location)||'<i class="muted">no location</i>'}</b></span><span>👤 ${esc(a.custodian)||'<i>—</i>'}</span><span>${esc(deptLabel(a.dept))}</span><span class="mono">${fmt$(a.value)}</span>`}</div>
     </div>
-    <div class="acts"><button class="qok ${ok?'done':''}" data-qok="${esc(a.id)}" title="Mark Verified OK">✓</button>
-      <button class="qmore" data-open="${esc(a.id)}" title="Details">⋯</button></div></div>`}
+    ${disp?'':`<div class="acts"><button class="qok ${ok?'done':''}" data-qok="${esc(a.id)}" title="Mark Verified OK">✓</button>
+      <button class="qmore" data-open="${esc(a.id)}" title="Details">⋯</button></div>`}</div>`}
 function bindListEvents(root){
   root.addEventListener('click',async e=>{
     const ok=e.target.closest('[data-qok]');
-    if(ok){const a=ST.assets.get(ok.dataset.qok);if(!a)return;
-      if(a.status!=='Verified OK'){await saveAsset(a,[{f:'status',old:a.status,new:'Verified OK'}].map(c=>(a.status='Verified OK',c)));ok.classList.add('done');
+    if(ok){const a=ST.assets.get(ok.dataset.qok);if(!a||a.lc==='D')return;
+      if(a.status!=='Verified OK'){const old=a.status;a.status='Verified OK';
+        await saveAsset(a,[{f:'status',old,new:'Verified OK'}]);ok.classList.add('done');
         const card=ok.closest('.acard');if(card)card.querySelector('.stat-pill').outerHTML=pill('Verified OK');toast(a.tag+' → Verified OK')}
       return}
     const ck=e.target.closest('[data-ck]');
@@ -572,28 +587,30 @@ function searchAssets(q,scope){
   const toks=q.toLowerCase().split(/\s+/).filter(Boolean);if(!toks.length)return[];
   const hay=a=>{switch(scope){case'tag':return a.tag;case'id':return a.id;case'serial':return a.serial;case'location':return a.location;
     case'custodian':return a.custodian;case'dept':return a.dept+' '+a.deptName+' '+deptLabel(a.dept);
-    default:return [a.tag,a.id,a.serial,a.desc,a.location,a.custodian,a.dept,deptLabel(a.dept),a.div,a.notes].join(' ')}};
+    default:return [a.tag,a.id,a.serial,a.desc,a.location,a.custodian,a.dept,a.deptName,deptLabel(a.dept),a.div,a.notes,a.retireDate].join(' ')}};
   const out=[];
   for(const a of ST.assets.values()){
+    if(!lcPass(a))continue;
     const h=hay(a).toLowerCase();
     if(toks.every(t=>h.includes(t)))out.push(a);
   }
   const q0=toks[0];
   out.sort((x,y)=>{const xs=x.tag.toLowerCase().startsWith(q0)?0:1,ys=y.tag.toLowerCase().startsWith(q0)?0:1;
-    return xs-ys||x.tag.localeCompare(y.tag)});
+    return xs-ys||(x.lc==='D')-(y.lc==='D')||x.tag.localeCompare(y.tag)});
   return out;
 }
 function renderSearch(m){
-  m.innerHTML=`<div class="page-h"><h2>Asset lookup</h2><span class="cnt">${ST.assets.size.toLocaleString()} assets on record</span></div>
+  const nA=[...ST.assets.values()].filter(a=>a.lc!=='D').length,nD=ST.assets.size-nA;
+  m.innerHTML=`<div class="page-h"><h2>Asset lookup</h2><span class="cnt">${nA.toLocaleString()} active · ${nD.toLocaleString()} disposed</span></div>
   <div class="search-wrap"><span class="s-ico">${I.search}</span>
     <input id="gq" type="search" placeholder="Tag, serial, description, location, custodian…" value="${esc(ST.q)}" autocomplete="off">
     <button class="s-clear ${ST.q?'':'hidden'}" id="gqClear">✕</button></div>
-  <div class="chip-row">${SCOPES.map(([k,l])=>`<button class="chip ${ST.scope===k?'on':''}" data-scope="${k}">${l}</button>`).join('')}</div>
+  <div class="chip-row" style="align-items:center">${lcSeg()}<span style="width:4px"></span>${SCOPES.map(([k,l])=>`<button class="chip ${ST.scope===k?'on':''}" data-scope="${k}">${l}</button>`).join('')}</div>
   <div id="sres"></div>`;
   const run=()=>{
     ST.q=$('#gq').value;$('#gqClear').classList.toggle('hidden',!ST.q);
     const box=$('#sres');
-    if(ST.q.trim().length<2){box.innerHTML=`<div class="note">Type at least 2 characters. Tip: scan-read a property tag and type the last 4–5 digits.</div>`;return}
+    if(ST.q.trim().length<2){box.innerHTML=`<div class="note">Type at least 2 characters — searching ${ST.lc==='A'?'active assets':ST.lc==='D'?'disposed/retired assets':'all assets, active and disposed'}. Tip: scan-read a property tag and type the last 4–5 digits.</div>`;return}
     const res=searchAssets(ST.q,ST.scope),max=80;
     box.innerHTML=`<div class="muted" style="font-size:13px;margin-bottom:9px">${res.length.toLocaleString()} match${res.length===1?'':'es'}${res.length>max?' · showing first '+max:''}</div>`
       +res.slice(0,max).map(a=>assetCard(a)).join('');
@@ -606,12 +623,12 @@ function renderSearch(m){
   run();
 }
 
-/* ---------------- departments ---------------- */
-function deptStats(id){let t=0,r=0;for(const a of ST.assets.values())if(a.dept===id){t++;if(a.status!=='Unreviewed')r++}return{t,r}}
+/* ---------------- physical inventory (departments) ---------------- */
+function deptStats(id){let t=0,r=0;for(const a of ST.assets.values())if(a.lc!=='D'&&a.dept===id){t++;if(a.status!=='Unreviewed')r++}return{t,r}}
 function renderDepts(m){
   const groups={};
   ST.depts.forEach(d=>{(groups[d.div]=groups[d.div]||[]).push(d)});
-  let html=`<div class="page-h"><h2>Departments</h2><span class="cnt">${ST.depts.length} departments</span></div>
+  let html=`<div class="page-h"><h2>Physical Inventory</h2><span class="cnt">FY 2025–26 · ${ST.depts.length} departments · active assets</span></div>
   <div class="search-wrap"><span class="s-ico">${I.search}</span><input id="dq" type="search" placeholder="Filter departments…"></div><div id="dlist">`;
   for(const div of Object.keys(groups)){
     html+=`<div class="div-h" data-div="${esc(div)}">${esc(div)}</div>`;
@@ -635,11 +652,12 @@ function renderDepts(m){
 }
 function renderDept(m,id){
   const d=ST.deptMap[id]||{deptId:id,name:'',div:''};
-  const list=[...ST.assets.values()].filter(a=>a.dept===id).sort((a,b)=>a.tag.localeCompare(b.tag));
+  const list=[...ST.assets.values()].filter(a=>a.lc!=='D'&&a.dept===id).sort((a,b)=>a.tag.localeCompare(b.tag));
+  const nDisp=[...ST.assets.values()].filter(a=>a.lc==='D'&&a.dept===id).length;
   const s=deptStats(id),pct=s.t?Math.round(100*s.r/s.t):0;
   const mode=ST.deptView[id]||'card';
-  m.innerHTML=`<div style="margin-bottom:4px"><a href="#/depts" style="font-size:13px;text-decoration:none">← Departments</a></div>
-  <div class="page-h"><h2>${esc(d.name||'Department '+id)}</h2><span class="cnt mono">${deptPad(id)} · ${esc(d.div)}</span></div>
+  m.innerHTML=`<div style="margin-bottom:4px"><a href="#/depts" style="font-size:13px;text-decoration:none">← Physical Inventory</a></div>
+  <div class="page-h"><h2>${esc(d.name||'Department '+id)}</h2><span class="cnt mono">${deptPad(id)} · ${esc(d.div)}${nDisp?` · <a href="#" id="dShowDisp">${nDisp} disposed</a>`:''}</span></div>
   <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
     <div style="flex:1;min-width:150px"><b>${s.r} of ${s.t}</b> reviewed · <b style="color:${pct===100?'var(--ok)':'var(--accent)'}">${pct}%</b>
       <div class="meter ${pct===100?'full':''}" style="width:100%;max-width:340px;margin-top:7px"><i style="width:${pct}%"></i></div></div>
@@ -649,6 +667,7 @@ function renderDept(m,id){
       <span class="seg"><button data-vm="card" class="${mode==='card'?'on':''}">Cards</button><button data-vm="table" class="${mode==='table'?'on':''}">Table</button></span>
     </div></div>
   <div id="dassets"></div>`;
+  const sd=$('#dShowDisp');if(sd)sd.onclick=e=>{e.preventDefault();ST.lc='D';ST.flt={q:'',status:'',div:'',dept:id,noloc:false,survey:false};location.hash='#/assets'};
   $('#dOk').onclick=async()=>{
     const un=list.filter(a=>a.status==='Unreviewed');
     if(!un.length){toast('Nothing unreviewed in this department');return}
@@ -691,6 +710,7 @@ const COLS=[
  {k:'inServiceDt',l:'In service',w:100,date:1},
  {k:'value',l:'Value',w:110,cls:'num',num:1,fmt:v=>fmt$(v)},
  {k:'status',l:'Status',w:130,fmt:v=>pill(v)},
+ {k:'retireDate',l:'Retired',w:100,cls:'mono',date:1},
  {k:'notes',l:'Notes',w:200},
  {k:'updatedAt',l:'Last updated',w:130,cls:'mono'},
  {k:'updatedBy',l:'Updated by',w:120}];
@@ -712,15 +732,15 @@ function vTable(box,rows,opts={}){
     </div>
     <div class="vt-body" id="vbody" style="height:${sorted.length*rowH}px"></div>
   </div>
-  <div style="padding:8px 12px;font-size:12.5px" class="muted">${sorted.length.toLocaleString()} rows · click a column to sort · click a row to open</div></div>`;
+  <div style="padding:8px 12px;font-size:12.5px" class="muted">${sorted.length.toLocaleString()} rows · click a column to sort · click a row to open · disposed rows are read-only</div></div>`;
   const sc=$('#vsc'),body=$('#vbody');
   function paint(){
     const top=sc.scrollTop,first=Math.max(0,Math.floor(top/rowH)-6),last=Math.min(sorted.length,first+Math.ceil(sc.clientHeight/rowH)+12);
     let h='';
     for(let i=first;i<last;i++){const a=sorted[i];
       h+=`<div class="vt-row ${ST.sel.has(a.id)?'sel':''}" data-open="${esc(a.id)}" style="top:${i*rowH}px;grid-template-columns:${grid}">
-        <div class="c ck-c"><input type="checkbox" data-ck="${esc(a.id)}" ${ST.sel.has(a.id)?'checked':''}></div>
-        ${cols.map(c=>`<div class="c ${c.cls||''}" title="${esc(a[c.k])}">${c.fmt?c.fmt(a[c.k]):esc(a[c.k])}</div>`).join('')}</div>`;
+        <div class="c ck-c">${a.lc==='D'?'':`<input type="checkbox" data-ck="${esc(a.id)}" ${ST.sel.has(a.id)?'checked':''}>`}</div>
+        ${cols.map(c=>`<div class="c ${c.cls||''}" title="${esc(a[c.k])}">${c.k==='status'?pill(a.lc==='D'?'Disposed':a.status):(c.fmt?c.fmt(a[c.k]):esc(a[c.k]))}</div>`).join('')}</div>`;
     }
     body.innerHTML=h;
   }
@@ -729,7 +749,7 @@ function vTable(box,rows,opts={}){
     const s=e.target.closest('[data-sort]');if(!s)return;
     const k=s.dataset.sort;ST.sort=ST.sort.k===k?{k,dir:-ST.sort.dir}:{k,dir:1};
     if(opts.rerender)opts.rerender();else vTable(box,rows,opts)});
-  $('#vAll').onchange=e=>{sorted.forEach(a=>e.target.checked?ST.sel.add(a.id):ST.sel.delete(a.id));paint();bulkBar()};
+  $('#vAll').onchange=e=>{sorted.forEach(a=>{if(a.lc!=='D')e.target.checked?ST.sel.add(a.id):ST.sel.delete(a.id)});paint();bulkBar()};
   body.addEventListener('click',e=>{
     const ck=e.target.closest('[data-ck]');
     if(ck){ck.checked?ST.sel.add(ck.dataset.ck):ST.sel.delete(ck.dataset.ck);ck.closest('.vt-row').classList.toggle('sel',ck.checked);bulkBar();e.stopPropagation();return}
@@ -740,23 +760,26 @@ function vTable(box,rows,opts={}){
 function filteredAssets(){
   const f=ST.flt,q=f.q.toLowerCase().trim();
   return [...ST.assets.values()].filter(a=>{
-    if(f.status&&a.status!==f.status)return false;
+    if(!lcPass(a))return false;
+    if(f.status&&(a.lc==='D'?'Disposed':a.status)!==f.status)return false;
     if(f.div&&a.div!==f.div)return false;
     if(f.dept&&a.dept!==f.dept)return false;
-    if(f.noloc&&a.location)return false;
-    if(q){const h=[a.tag,a.id,a.serial,a.desc,a.location,a.custodian,a.deptName,a.dept].join(' ').toLowerCase();
+    if(f.noloc&&(a.location||a.lc==='D'))return false;
+    if(f.survey&&!(a.survey&&a.survey.length))return false;
+    if(q){const h=[a.tag,a.id,a.serial,a.desc,a.location,a.custodian,a.deptName,a.dept,a.retireDate].join(' ').toLowerCase();
       if(!q.split(/\s+/).every(t=>h.includes(t)))return false}
     return true});
 }
 function renderAssets(m){
   const divs=[...new Set(ST.depts.map(d=>d.div))];
   m.innerHTML=`<div class="page-h"><h2>All assets</h2><span class="cnt" id="acnt"></span></div>
-  <div class="tbl-tools">
+  <div class="tbl-tools">${lcSeg()}
     <input type="search" id="fq" placeholder="Filter rows…" value="${esc(ST.flt.q)}">
-    <select id="fst"><option value="">Any status</option><option>Unreviewed</option>${STATUSES.map(s=>`<option>${s}</option>`).join('')}</select>
+    <select id="fst"><option value="">Any status</option><option>Unreviewed</option>${STATUSES.map(s=>`<option>${s}</option>`).join('')}<option>Disposed</option></select>
     <select id="fdv"><option value="">Any division</option>${divs.map(d=>`<option ${ST.flt.div===d?'selected':''}>${esc(d)}</option>`).join('')}</select>
     <select id="fdp"><option value="">Any department</option>${ST.depts.map(d=>`<option value="${d.deptId}" ${ST.flt.dept===d.deptId?'selected':''}>${esc(d.name||d.deptId)}</option>`).join('')}</select>
     <button class="chip ${ST.flt.noloc?'on':''}" id="fnl">No location</button>
+    <button class="chip ${ST.flt.survey?'on':''}" id="fsv">⚑ Has survey</button>
   </div><div id="atbl"></div>`;
   $('#fst').value=ST.flt.status;
   const rerender=()=>{const rows=filteredAssets();$('#acnt').textContent=rows.length.toLocaleString()+' of '+ST.assets.size.toLocaleString();
@@ -766,6 +789,7 @@ function renderAssets(m){
   $('#fdv').onchange=()=>{ST.flt.div=$('#fdv').value;rerender()};
   $('#fdp').onchange=()=>{ST.flt.dept=$('#fdp').value;rerender()};
   $('#fnl').onclick=()=>{ST.flt.noloc=!ST.flt.noloc;renderAssets(m)};
+  $('#fsv').onclick=()=>{ST.flt.survey=!ST.flt.survey;renderAssets(m)};
   rerender();
 }
 
@@ -783,38 +807,48 @@ function bulkBar(){
     const b=e.target.closest('[data-bst]');if(!b)return;
     const st=b.dataset.bst,ids=[...ST.sel];
     if(!await confirmDlg('Bulk update',`Set <b>${ids.length}</b> selected asset(s) to <b>${esc(st)}</b>?`,'Apply'))return;
-    for(const id of ids){const a=ST.assets.get(id);if(a&&a.status!==st){const old=a.status;a.status=st;await saveAsset(a,[{f:'status',old,new:st}],true)}}
-    scheduleAutoSync();ST.sel.clear();toast(ids.length+' assets → '+st);render();
+    let n=0;
+    for(const id of ids){const a=ST.assets.get(id);if(a&&a.lc!=='D'&&a.status!==st){const old=a.status;a.status=st;await saveAsset(a,[{f:'status',old,new:st}],true);n++}}
+    scheduleAutoSync();ST.sel.clear();toast(n+' assets → '+st);render();
   };
 }
 
-/* ---------------- stats ---------------- */
+/* ---------------- dashboard ---------------- */
 function renderStats(m){
-  const A=[...ST.assets.values()];
+  const ALL=[...ST.assets.values()],A=ALL.filter(a=>a.lc!=='D'),D=ALL.filter(a=>a.lc==='D');
   const total=A.length,rev=A.filter(a=>a.status!=='Unreviewed'),ok=A.filter(a=>a.status==='Verified OK');
   const pct=total?Math.round(100*rev.length/total):0;
   const dc=ST.depts.filter(d=>{const s=deptStats(d.deptId);return s.t>0&&s.r===s.t}).length;
   const tv=A.reduce((s,a)=>s+a.value,0),vv=ok.reduce((s,a)=>s+a.value,0);
   const nf=A.filter(a=>a.status==='Not Found'),nfv=nf.reduce((s,a)=>s+a.value,0);
+  const dv=D.reduce((s,a)=>s+a.value,0),dSrv=D.filter(a=>a.survey&&a.survey.length).length;
+  const aSrv=A.filter(a=>a.survey&&a.survey.length);
   const breakdown=['Verified OK','Not Found','Wrong Location','Damaged','Other','Unreviewed'].map(s=>({s,n:A.filter(a=>a.status===s).length}));
   const colors={'Verified OK':'var(--ok)','Not Found':'var(--bad)','Wrong Location':'var(--warn)','Damaged':'var(--dmg)','Other':'var(--oth)','Unreviewed':'var(--un)'};
   const recent=A.filter(a=>a.updatedAt&&a.updatedBy!=='Tracker Import').sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,10);
   const tagEdits=A.filter(a=>(a.history||[]).some(h=>h.f==='tag'));
   const noloc=A.filter(a=>!a.location);
-  m.innerHTML=`<div class="page-h"><h2>Inventory dashboard</h2><span class="cnt">FY 2025–26 · CSU Policy 1401.00</span></div>
+  m.innerHTML=`<div class="page-h"><h2>Dashboard</h2><span class="cnt">FY 2025–26 · CSU Policy 1401.00</span></div>
+  <div class="div-h">Physical inventory — active assets</div>
   <div class="kpis">
     <div class="kpi gold"><div class="v">${pct}%</div><div class="l">Cycle complete</div></div>
-    <div class="kpi"><div class="v">${total.toLocaleString()}</div><div class="l">Total assets</div></div>
+    <div class="kpi"><div class="v">${total.toLocaleString()}</div><div class="l">Active assets</div></div>
     <div class="kpi"><div class="v">${rev.length.toLocaleString()}</div><div class="l">Reviewed</div></div>
     <div class="kpi"><div class="v">${(total-rev.length).toLocaleString()}</div><div class="l">Remaining</div></div>
     <div class="kpi"><div class="v">${dc} / ${ST.depts.length}</div><div class="l">Depts complete</div></div>
-    <div class="kpi"><div class="v">${ST.depts.length-dc}</div><div class="l">Depts remaining</div></div>
-    <div class="kpi"><div class="v" style="font-size:19px">${fmt$(tv)}</div><div class="l">Total value</div></div>
+    <div class="kpi"><div class="v" style="font-size:19px">${fmt$(tv)}</div><div class="l">Active value</div></div>
     <div class="kpi"><div class="v" style="font-size:19px;color:var(--ok)">${fmt$(vv)}</div><div class="l">Verified value</div></div>
     <div class="kpi"><div class="v" style="font-size:19px;color:var(--bad)">${fmt$(nfv)}</div><div class="l">Not-found value (${nf.length})</div></div>
   </div>
   <div class="card"><b style="font-size:14.5px">Status breakdown</b>
     ${breakdown.map(b=>`<div class="hbar"><span class="lb">${b.s}</span><span class="tr"><i style="width:${total?100*b.n/total:0}%;background:${colors[b.s]}"></i></span><span class="n">${b.n.toLocaleString()}</span></div>`).join('')}</div>
+  <div class="div-h">Disposals &amp; surveys</div>
+  <div class="kpis">
+    <div class="kpi" id="kDisp" style="cursor:pointer"><div class="v">${D.length.toLocaleString()}</div><div class="l">Disposed assets</div></div>
+    <div class="kpi"><div class="v" style="font-size:19px">${fmt$(dv)}</div><div class="l">Original value retired</div></div>
+    <div class="kpi"><div class="v">${dSrv.toLocaleString()}</div><div class="l">Disposals w/ survey (${D.length?Math.round(100*dSrv/D.length):0}%)</div></div>
+    <div class="kpi" id="kASrv" style="cursor:pointer"><div class="v" style="color:var(--accent)">${aSrv.length}</div><div class="l">Active w/ survey on file</div></div>
+  </div>
   <div class="card"><b style="font-size:14.5px">Data quality</b>
     <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:10px">
       <button class="chip" id="qNoloc">📍 ${noloc.length} missing locations</button>
@@ -823,50 +857,111 @@ function renderStats(m){
   <div class="card"><b style="font-size:14.5px">Recently updated</b>
     ${recent.length?recent.map(a=>`<div class="imp-row" style="cursor:pointer" data-open="${esc(a.id)}"><span class="mono">${esc(a.tag)}</span>
       <span>${pill(a.status)} <span class="muted" style="font-size:12px">${esc(a.updatedBy)} · ${esc(a.updatedAt)}</span></span></div>`).join(''):'<div class="muted" style="margin-top:8px;font-size:13px">No field updates yet.</div>'}</div>`;
-  $('#qNoloc').onclick=()=>{ST.flt={q:'',status:'',div:'',dept:'',noloc:true};location.hash='#/assets'};
-  $('#qTags').onclick=()=>{toast(tagEdits.length+' assets have tag edits — included in export');};
-  $('#qNf').onclick=()=>{ST.flt={q:'',status:'Not Found',div:'',dept:'',noloc:false};location.hash='#/assets'};
+  const goAssets=f=>{ST.flt={q:'',status:'',div:'',dept:'',noloc:false,survey:false,...f.flt};ST.lc=f.lc||'A';location.hash='#/assets';if(ST.route.v==='assets')render()};
+  $('#kDisp').onclick=()=>goAssets({lc:'D'});
+  $('#kASrv').onclick=()=>goAssets({lc:'A',flt:{survey:true}});
+  $('#qNoloc').onclick=()=>goAssets({lc:'A',flt:{noloc:true}});
+  $('#qTags').onclick=()=>{toast(tagEdits.length+' assets have tag edits — included in export')};
+  $('#qNf').onclick=()=>goAssets({lc:'A',flt:{status:'Not Found'}});
   m.addEventListener('click',e=>{const r=e.target.closest('[data-open]');if(r)openAsset(r.dataset.open)});
 }
+/* ---------------- autofill suggestions ---------------- */
+function buildSuggIndex(field,deptId){
+  const all=new Map(),mine=new Map();
+  for(const a of ST.assets.values()){
+    if(a.lc==='D')continue;
+    const v=String(a[field]||'').trim();if(!v)continue;
+    all.set(v,(all.get(v)||0)+1);
+    if(a.dept===deptId)mine.set(v,(mine.get(v)||0)+1);
+  }
+  return{all,mine};
+}
+function attachSuggest(input,field,deptId){
+  const idx=buildSuggIndex(field,deptId);
+  const wrap=document.createElement('div');wrap.className='sugg-wrap';
+  input.parentNode.insertBefore(wrap,input);wrap.append(input);
+  let box=null;
+  const close=()=>{if(box){box.remove();box=null}};
+  const show=()=>{
+    const q=input.value.trim().toLowerCase();
+    const score=(v,n,own)=>{const lv=v.toLowerCase();
+      if(q&&!lv.includes(q))return -1;
+      return (own?10000:0)+(q&&lv.startsWith(q)?1000:0)+n};
+    const cand=new Map();
+    idx.mine.forEach((n,v)=>{const s=score(v,n,1);if(s>=0)cand.set(v,{s,n})});
+    idx.all.forEach((n,v)=>{if(!cand.has(v)){const s=score(v,n,0);if(s>=0)cand.set(v,{s,n})}});
+    const top=[...cand.entries()].sort((a,b)=>b[1].s-a[1].s).slice(0,8)
+      .filter(([v])=>v.toLowerCase()!==q);
+    close();
+    if(!top.length)return;
+    box=document.createElement('div');box.className='sugg';
+    box.innerHTML=top.map(([v,{n}])=>`<button type="button" data-v="${esc(v)}"><span>${esc(v)}</span><span class="freq">${idx.mine.has(v)?'this dept · ':''}×${n}</span></button>`).join('');
+    box.addEventListener('mousedown',e=>{const b=e.target.closest('[data-v]');
+      if(b){e.preventDefault();input.value=b.dataset.v;close();input.dispatchEvent(new Event('input'))}});
+    wrap.append(box);
+  };
+  input.addEventListener('input',debounce(show,120));
+  input.addEventListener('focus',show);
+  input.addEventListener('blur',()=>setTimeout(close,180));
+}
+
 /* ---------------- asset detail panel ---------------- */
 const EDITABLE=[['tag','Property tag'],['location','Location'],['custodian','Custodian'],['serial','Serial ID'],['desc','Description'],['notes','Auditor notes']];
+function surveyBlock(a){
+  if(!a.survey||!a.survey.length)return'';
+  return `<div class="muted" style="font-size:13px;margin:14px 0 4px">⚑ Survey records on file (matched by asset ID / tag / serial)</div>`+
+    a.survey.map(s=>`<div class="srv-card"><b>${esc(s.no)||'—'}</b> · ${esc(s.sh)}${s.dt?' · '+esc(s.dt):''}<br>
+      ${esc(s.desc)}${s.act?` — <b>${esc(s.act)}</b>`:''}${s.cond?` · ${esc(s.cond)}`:''}${s.notes?`<br><span class="muted">${esc(s.notes)}</span>`:''}</div>`).join('');
+}
 function openAsset(id){
   const a=ST.assets.get(id);if(!a)return;
   closePanel();
   const veil=document.createElement('div');veil.className='panel-veil';veil.id='pveil';
   const p=document.createElement('div');p.className='panel';p.id='panel';
+  const disposed=a.lc==='D';
   let st=a.status;
   const ALL=['Verified OK','Not Found','Wrong Location','Damaged','Other','Unreviewed'];
-  p.innerHTML=`<div class="panel-h"><span class="tagchip" style="font-size:17px">${esc(a.tag)}</span><span id="pst">${pill(st)}</span>
+  p.innerHTML=`<div class="panel-h"><span class="tagchip" style="font-size:17px">${esc(a.tag)||'no tag'}</span><span id="pst">${pill(disposed?'Disposed':st)}</span>
       <span style="flex:1"></span><button class="btn btn-sm" id="pclose">✕</button></div>
     <div class="panel-b">
-      <div class="muted" style="font-size:13px;margin-bottom:6px">Status</div>
+      ${disposed?`<div class="note" style="border-left:3px solid var(--ink);background:var(--surface2)">
+          <b>Retired asset</b> — disposal reference record, read-only.<br>
+          Retired: <b class="mono">${esc(a.retireDate)||'—'}</b> · Original value: <b class="mono">${fmt$(a.value)}</b> · Net book at retirement: <b class="mono">${fmt$(a.netBook)}</b></div>
+        ${surveyBlock(a)}`
+      :`<div class="muted" style="font-size:13px;margin-bottom:6px">Status</div>
       <div class="stat-grid">${ALL.map(s=>`<button class="sb ${stCls(s)} ${st===s?'on':''}" data-st="${s}">${s}</button>`).join('')}</div>
       ${EDITABLE.map(([k,l])=>`<div class="field"><label>${l}</label>${k==='desc'||k==='notes'
         ?`<textarea data-f="${k}" rows="${k==='notes'?3:2}">${esc(a[k])}</textarea>`
-        :`<input data-f="${k}" value="${esc(a[k])}" ${k==='tag'||k==='serial'?'class="mono"':''}>`}</div>`).join('')}
+        :`<input data-f="${k}" value="${esc(a[k])}" ${k==='tag'||k==='serial'?'class="mono"':''} autocomplete="off">`}</div>`).join('')}
+      ${surveyBlock(a)}`}
       <div class="muted" style="font-size:13px;margin:14px 0 7px">Record details</div>
       <div class="ro-grid">
         <div><div class="lab">Asset ID</div><span class="mono">${esc(a.id)}</span></div>
-        <div><div class="lab">Department</div>${esc(deptLabel(a.dept))} <span class="muted mono">(${deptPad(a.dept)})</span></div>
-        <div><div class="lab">Division</div><span class="mono">${esc(a.div)}</span></div>
-        <div><div class="lab">Category</div>${esc(a.category)}</div>
+        <div><div class="lab">Department</div>${esc(a.deptName||deptLabel(a.dept))} <span class="muted mono">(${deptPad(a.dept)})</span></div>
+        <div><div class="lab">Division</div><span class="mono">${esc(a.div)||'—'}</span></div>
+        <div><div class="lab">Category</div>${esc(a.category)||'—'}</div>
         <div><div class="lab">Acquired</div>${esc(a.acqDate)||'—'}</div>
         <div><div class="lab">In service</div>${esc(a.inServiceDt)||'—'}</div>
         <div><div class="lab">Value</div><span class="mono">${fmt$(a.value)}</span></div>
         <div><div class="lab">PO #</div><span class="mono">${esc(a.po)||'—'}</span></div>
-        <div><div class="lab">Updated by</div>${esc(a.updatedBy)||'—'}</div>
-        <div><div class="lab">Last updated</div><span class="mono">${esc(a.updatedAt)||'—'}</span></div>
+        ${disposed?`<div><div class="lab">Retired</div><span class="mono">${esc(a.retireDate)||'—'}</span></div>
+        <div><div class="lab">Net book value</div><span class="mono">${fmt$(a.netBook)}</span></div>`
+        :`<div><div class="lab">Updated by</div>${esc(a.updatedBy)||'—'}</div>
+        <div><div class="lab">Last updated</div><span class="mono">${esc(a.updatedAt)||'—'}</span></div>`}
       </div>
-      <div class="muted" style="font-size:13px;margin:6px 0">Edit history</div>
+      ${disposed?'':`<div class="muted" style="font-size:13px;margin:6px 0">Edit history</div>
       <div id="phist">${(a.history&&a.history.length)?a.history.slice().reverse().map(h=>
         `<div class="hist"><b>${esc(h.f)}</b>: ${esc(h.old)||'<i>blank</i>'} → <b>${esc(h.new)}</b><br>${esc(h.u)} · ${esc(h.t)}</div>`).join('')
-        :'<div class="muted" style="font-size:12.5px">No edits yet.</div>'}</div>
+        :'<div class="muted" style="font-size:12.5px">No edits yet.</div>'}</div>`}
     </div>
-    <div class="panel-f"><button class="btn" id="pcancel" style="flex:1">Cancel</button>
-      <button class="btn btn-gold" id="psave" style="flex:2">Save changes</button></div>`;
+    ${disposed?'':`<div class="panel-f"><button class="btn" id="pcancel" style="flex:1">Cancel</button>
+      <button class="btn btn-gold" id="psave" style="flex:2">Save changes</button></div>`}`;
   document.body.append(veil,p);
-  veil.onclick=closePanel;$('#pclose').onclick=closePanel;$('#pcancel').onclick=closePanel;
+  veil.onclick=closePanel;$('#pclose').onclick=closePanel;
+  if(disposed)return;
+  $('#pcancel').onclick=closePanel;
+  attachSuggest(p.querySelector('[data-f="location"]'),'location',a.dept);
+  attachSuggest(p.querySelector('[data-f="custodian"]'),'custodian',a.dept);
   p.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{st=b.dataset.st;
     p.querySelectorAll('[data-st]').forEach(x=>x.classList.toggle('on',x.dataset.st===st));
     $('#pst').innerHTML=pill(st)});
@@ -885,28 +980,59 @@ function closePanel(){$('#pveil')?.remove();$('#panel')?.remove()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePanel()}});
 
 /* ---------------- import ---------------- */
-const IMP_MAP={'asset id':'id','tag number':'tag','dept':'dept','description':'desc','serial id':'serial','location':'location',
- 'custodian':'custodian','category':'category','acq date':'acqDate','in service dt':'inServiceDt','po no.':'po','sum amount':'value',
- 'property tag':'tag','tag':'tag','status':'status','notes':'notes','dept id':'dept','department':'dept','value':'value','serial':'serial'};
+const IMP_MAP={'asset id':'id','tag number':'tag','tag #':'tag','tag':'tag','property tag':'tag',
+ 'dept':'dept','dept id':'dept','department':'dept','cust dept':'dept','custodian dept id':'dept','department descr':'deptName','department name':'deptName',
+ 'description':'desc','serial id':'serial','serial#':'serial','serial':'serial','original serial':null,
+ 'location':'location','custodian':'custodian','category':'category','profile id':'category',
+ 'acq date':'acqDate','in service dt':'inServiceDt','in service date':'inServiceDt',
+ 'po no.':'po','po no':'po','sum amount':'value','amount':'value','value':'value','original asset amount':'value',
+ 'status':'status','notes':'notes','pmo comments':'pmo','retire date':'retireDate','net book value':'netBook'};
+const impKey=k=>IMP_MAP[String(k||'').replace(/\s+/g,' ').trim().toLowerCase()];
+function pmoToStatus(c){
+  // PMO worksheet comments -> audit status + note
+  const t=String(c||'').trim();if(!t)return{};
+  if(/lost|missing/i.test(t))return{status:'Not Found',note:t};
+  if(/not\s*verified/i.test(t))return{note:t};               // leave status unchanged
+  if(/^ok\b/i.test(t)||/photo of tag/i.test(t))return{status:'Verified OK',note:t.replace(/^ok$/i,'')};
+  return{status:'Other',note:t};
+}
+function findHeaderRow(aoa){
+  for(let i=0;i<Math.min(aoa.length,12);i++){
+    const cells=(aoa[i]||[]).map(c=>String(c??'').replace(/\s+/g,' ').trim().toLowerCase());
+    if(cells.some(c=>c==='asset id')||(cells.includes('tag #')&&cells.includes('description'))||(cells.includes('tag number')&&cells.includes('retire date')))
+      return i;
+  }
+  return -1;
+}
+function aoaToObjects(aoa,hi){
+  const hdr=aoa[hi].map(c=>String(c??'').replace(/\s+/g,' ').trim());
+  return aoa.slice(hi+1).map(row=>{const o={};hdr.forEach((h,j)=>{if(h)o[h]=row[j]});return o});
+}
 function normalizeRows(rows){
-  // map arbitrary headers -> our schema; group by Asset ID; sum value
   const byId=new Map();let skipped=0;
+  const clean=v=>{const s=String(v??'').trim();return /^(nan|nat|none|null)$/i.test(s)?'':s};
+  const dstr=v=>{const s=clean(v);const m=s.match(/^(\d{4}-\d{2}-\d{2})/);return m?m[1]:s};
   for(const r of rows){
     const o={};
-    for(const k in r){const mk=IMP_MAAP_safe(k);if(mk)o[mk]=r[k]}
-    const id=String(o.id??'').replace(/\.0$/,'').trim();
-    if(!id||!/^\d+$/.test(id)){skipped++;continue}
-    const clean=v=>{const s=String(v??'').trim();return /^(nan|nat|none|null)$/i.test(s)?'':s};
+    for(const k in r){const mk=impKey(k);if(mk)o[mk]=r[k]}
+    let id=clean(o.id).replace(/\.0$/,'');
+    if(!/^\d+$/.test(id)){skipped++;continue}
+    id=String(parseInt(id,10)); // strip leading zeros: 000000001809 -> 1809
     const val=parseFloat(String(o.value??'0').replace(/[$,]/g,''))||0;
     if(byId.has(id)){byId.get(id).value+=val;continue}
-    byId.set(id,{id,tag:clean(o.tag),dept:String(parseInt(o.dept)||'').trim(),desc:clean(o.desc),serial:clean(o.serial),
-      location:clean(o.location),custodian:clean(o.custodian),category:clean(o.category),acqDate:clean(o.acqDate),
-      inServiceDt:clean(o.inServiceDt),po:clean(o.po).replace(/\.0$/,''),value:val,status:clean(o.status),notes:clean(o.notes)});
+    const pmo=pmoToStatus(o.pmo);
+    byId.set(id,{id,tag:clean(o.tag),dept:String(parseInt(o.dept)||'').trim(),deptName:clean(o.deptName),
+      desc:clean(o.desc),serial:clean(o.serial),location:clean(o.location),custodian:clean(o.custodian),
+      category:clean(o.category),acqDate:dstr(o.acqDate),inServiceDt:dstr(o.inServiceDt),
+      po:clean(o.po).replace(/\.0$/,''),value:val,
+      status:clean(o.status)||pmo.status||'',noteAdd:pmo.note||'',notes:clean(o.notes),
+      retireDate:dstr(o.retireDate),netBook:parseFloat(String(o.netBook??'0').replace(/[$,]/g,''))||0,
+      isDisposal:'retireDate' in o});
   }
   return{rows:[...byId.values()],skipped};
 }
-function IMP_MAAP_safe(k){return IMP_MAP[String(k||'').trim().toLowerCase()]}
-const CMP_FIELDS=['tag','dept','desc','serial','location','custodian','category','acqDate','inServiceDt','po','value'];
+const CMP_FIELDS=['tag','dept','desc','serial','location','custodian','category','acqDate','inServiceDt','po','value','status'];
+const fieldAudited=(ex,f)=>(ex.history||[]).some(h=>h.f===f&&h.u!=='Tracker Import'&&!String(h.u).startsWith('Import'));
 function diffImport(incoming){
   const news=[],updates=[],conflicts=[],unchanged=[];
   for(const r of incoming){
@@ -914,12 +1040,14 @@ function diffImport(incoming){
     if(!ex){news.push(r);continue}
     const ch=[],cf=[];
     for(const f of CMP_FIELDS){
-      const nv=f==='value'?Number(r[f])||0:String(r[f]??''),ov=f==='value'?Number(ex[f])||0:String(ex[f]??'');
-      if(f!=='value'&&!String(r[f]??'').length)continue; // don't blank fields from sparse files
+      if(!String(r[f]??'').length)continue; // sparse files never blank fields
+      const nv=f==='value'?Number(r[f])||0:String(r[f]),ov=f==='value'?Number(ex[f])||0:String(ex[f]??'');
       if(String(nv)!==String(ov)){
-        const audited=(ex.history||[]).some(h=>h.f===f);
-        (audited?cf:ch).push({f,old:ov,new:nv});
+        (fieldAudited(ex,f)?cf:ch).push({f,old:ov,new:nv});
       }
+    }
+    if(r.noteAdd&&!(ex.notes||'').includes(r.noteAdd)){
+      ch.push({f:'notes',old:ex.notes,new:ex.notes?ex.notes+'; '+r.noteAdd:r.noteAdd});
     }
     if(cf.length)conflicts.push({asset:ex,ch,cf});
     else if(ch.length)updates.push({asset:ex,ch});
@@ -929,7 +1057,12 @@ function diffImport(incoming){
 }
 function renderImport(m){
   m.innerHTML=`<div class="page-h"><h2>Import asset data</h2></div>
-  <div class="note">Upload a fresh PeopleSoft asset query (CSV or Excel) — or a previous export from this app. Rows are matched by <b>Asset ID</b>; multiple cost rows for one asset are merged with summed value. Quoted commas (e.g. <span class="mono">"Last, First"</span>) are handled correctly. Nothing changes until you review the preview and apply.</div>
+  <div class="note">Accepts, with automatic format detection:<br>
+  · <b>PeopleSoft asset extracts</b> (LB_AM_PROPERTY… CSV/XLS) — matched by Asset ID, multi-cost rows merged with summed value<br>
+  · <b>PMO inventory worksheets</b> (Physical Inventory Listing — like the Music dept sheet) — header found automatically, <b>PMO COMMENTS</b> mapped to statuses: "OK"/"Photo of Tag" → Verified OK, "LOST/MISSING" → Not Found, "Not Verified" → status untouched, anything else → Other; the comment is kept as a note<br>
+  · <b>Disposal summaries</b> (LB_AM_DISPOSAL…) — adds/refreshes retired assets (kept on this device as reference data, not synced)<br>
+  · <b>This app's own exports</b> — for round-tripping<br>
+  Quoted commas (e.g. <span class="mono">"Last, First"</span>) are always handled. Nothing changes until you review the preview.</div>
   <div class="card" style="text-align:center;padding:26px">
     <input type="file" id="impFile" accept=".csv,.xlsx,.xls" class="hidden">
     <button class="btn btn-gold" id="impPick">Choose file…</button>
@@ -940,22 +1073,50 @@ function renderImport(m){
     const file=e.target.files[0];if(!file)return;
     $('#impOut').innerHTML='<div class="card"><span class="spin"></span> Reading '+esc(file.name)+'…</div>';
     try{
-      let rows;
+      let aoa;
       if(/\.csv$/i.test(file.name)){
-        rows=await new Promise((res,rej)=>Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>res(r.data),error:rej}));
+        aoa=await new Promise((res,rej)=>Papa.parse(file,{skipEmptyLines:true,complete:r=>res(r.data),error:rej}));
       }else{
-        const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array'});
-        rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:false,defval:''});
-        if(rows.length&&!Object.keys(rows[0]).some(k=>IMP_MAAP_safe(k))){ // merged header row on row 0 (PeopleSoft XLS)
-          rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:false,defval:'',range:1});
-        }
+        const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});
+        aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
       }
-      if(!rows.length||!Object.keys(rows[0]).some(k=>IMP_MAAP_safe(k)))throw new Error('Could not find expected columns (need at least "Asset ID").');
-      const{rows:inc,skipped}=normalizeRows(rows);
+      const hi=findHeaderRow(aoa);
+      if(hi<0)throw new Error('Could not find a header row with "Asset ID" (or Tag # + Description) in the first 12 rows.');
+      const{rows:inc,skipped}=normalizeRows(aoaToObjects(aoa,hi));
+      if(!inc.length)throw new Error('No rows with a numeric Asset ID found below the header.');
+      if(inc.filter(r=>r.isDisposal).length>inc.length/2){previewDisposalImport(inc,file.name,skipped);return}
       const d=diffImport(inc);
       previewImport(d,file.name,inc.length,skipped);
     }catch(err){$('#impOut').innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)">Import failed: ${esc(err.message||err)}</div>`}
     e.target.value='';
+  };
+}
+function previewDisposalImport(inc,fname,skipped){
+  const news=inc.filter(r=>!ST.assets.has(r.id));
+  const upd=inc.filter(r=>{const ex=ST.assets.get(r.id);return ex&&ex.lc==='D'});
+  const clash=inc.filter(r=>{const ex=ST.assets.get(r.id);return ex&&ex.lc!=='D'});
+  $('#impOut').innerHTML=`<div class="card"><b>${esc(fname)}</b> — detected as a <b>disposal summary</b> (${inc.length.toLocaleString()} retired assets)
+    <table class="plain" style="margin-top:10px">
+      <tr><td>New disposal records</td><td>${news.length}</td></tr>
+      <tr><td>Existing disposal records to refresh</td><td>${upd.length}</td></tr>
+      <tr><td>⚠ Currently <b>active</b> here but retired in this file</td><td>${clash.length}</td></tr>
+    </table>
+    <div class="note">Disposal records are reference data on this device only — they are not pushed to SharePoint. Assets flagged ⚠ will be switched to Disposed locally so they leave the inventory worklist.</div>
+    <div class="acts" style="display:flex;justify-content:flex-end"><button class="btn btn-gold" id="dpGo">Apply disposal import</button></div></div>
+  ${clash.length?`<div class="card" style="border-color:var(--warn)"><b style="color:var(--warn)">Active → Disposed (first 25)</b>${clash.slice(0,25).map(r=>`<div class="imp-row"><span class="mono">${esc(r.tag||r.id)}</span><span>${esc(r.desc)} · retired ${esc(r.retireDate)}</span></div>`).join('')}</div>`:''}`;
+  $('#dpGo').onclick=async()=>{
+    const put=[];
+    for(const r of inc){
+      const ex=ST.assets.get(r.id);
+      const base=ex||{id:r.id,tag:'',dept:'',deptName:'',div:'',desc:'',serial:'',location:'',custodian:'',category:'',acqDate:'',inServiceDt:'',po:'',value:0,notes:'',updatedBy:'',updatedAt:'',history:[],survey:[]};
+      Object.assign(base,{lc:'D',status:'Disposed',retireDate:r.retireDate,netBook:r.netBook,value:r.value||base.value,
+        tag:r.tag||base.tag,desc:r.desc||base.desc,dept:r.dept||base.dept,deptName:r.deptName||base.deptName,
+        div:ST.deptMap[r.dept]?.div||base.div,category:r.category||base.category,inServiceDt:r.inServiceDt||base.inServiceDt});
+      ST.assets.set(base.id,base);put.push(base);
+    }
+    await dbPutAssets(put);
+    toast(`Disposal data applied — ${put.length.toLocaleString()} records`);
+    location.hash='#/stats';
   };
 }
 function previewImport(d,fname,total,skipped){
@@ -975,12 +1136,16 @@ function previewImport(d,fname,total,skipped){
   ${d.news.length?`<div class="card"><b style="font-size:14px">New assets (first 25)</b>${d.news.slice(0,25).map(r=>`<div class="imp-row"><span class="mono">${esc(r.tag||r.id)}</span><span>${esc(r.desc)} · ${esc(deptLabel(r.dept))}</span></div>`).join('')}</div>`:''}`;
   $('#apGo').onclick=async()=>{
     const doU=$('#apU').checked,doN=$('#apN').checked,doC=$('#apC').checked;
-    let nU=0,nN=0,nC=0;const who='Import: '+fname;
-    if(doU)for(const u of d.updates){u.ch.forEach(c=>u.asset[c.f]=c.f==='value'?Number(c.new):c.new);await saveAsset(u.asset,u.ch,true);nU++}
-    if(doC)for(const u of d.conflicts){const all=u.ch.concat(u.cf);all.forEach(c=>u.asset[c.f]=c.f==='value'?Number(c.new):c.new);await saveAsset(u.asset,all,true);nC++}
+    let nU=0,nN=0,nC=0;
+    const apply=v=>(c=>v[c.f]=c.f==='value'?Number(c.new):c.new);
+    if(doU)for(const u of d.updates){u.ch.forEach(apply(u.asset));await saveAsset(u.asset,u.ch,true);nU++}
+    if(doC)for(const u of d.conflicts){const all=u.ch.concat(u.cf);all.forEach(apply(u.asset));await saveAsset(u.asset,all,true);nC++}
     if(doN)for(const r of d.news){
       const dd=ST.deptMap[r.dept]||{};
-      const a={...r,deptName:dd.name||'',div:dd.div||'',status:r.status||'Unreviewed',notes:r.notes||'',updatedBy:'',updatedAt:'',history:[]};
+      const a={id:r.id,tag:r.tag,dept:r.dept,deptName:r.deptName||dd.name||'',div:dd.div||'',desc:r.desc,serial:r.serial,
+        location:r.location,custodian:r.custodian,category:r.category,acqDate:r.acqDate,inServiceDt:r.inServiceDt,po:r.po,
+        value:r.value,status:r.status||'Unreviewed',notes:r.notes||r.noteAdd||'',updatedBy:'',updatedAt:'',history:[],
+        lc:'A',survey:[],retireDate:'',netBook:0};
       await saveAsset(a,[{f:'created',old:'',new:'via '+fname}],true);nN++;
     }
     await qAdd({kind:'import',payload:{Timestamp:nowStr(),User:ST.session.name,Filename:fname,RowsMatched:nU+nC,RowsAdded:nN,RowsConflicted:d.conflicts.length,
@@ -993,48 +1158,61 @@ function previewImport(d,fname,total,skipped){
 
 /* ---------------- export ---------------- */
 function originalOf(a,f){const h=(a.history||[]).find(x=>x.f===f);return h?String(h.old??''):''}
-function exportRows(changedOnly){
+function exportRows(scope){
   let list=[...ST.assets.values()];
-  if(changedOnly)list=list.filter(a=>a.status!=='Unreviewed'||(a.history||[]).length);
+  if(scope==='audit')list=list.filter(a=>a.lc!=='D'&&(a.status!=='Unreviewed'||(a.history||[]).length));
+  else if(scope==='active')list=list.filter(a=>a.lc!=='D');
+  else if(scope==='disposed')list=list.filter(a=>a.lc==='D');
   list.sort((a,b)=>(Number(a.dept)||0)-(Number(b.dept)||0)||a.tag.localeCompare(b.tag));
   return list.map(a=>({'Asset ID':a.id,'Property Tag':a.tag,'Original Tag':originalOf(a,'tag'),'Description':a.desc,
     'Serial ID':a.serial,'Original Serial':originalOf(a,'serial'),'Dept ID':deptPad(a.dept),'Department Name':a.deptName||deptLabel(a.dept),
     'Division/Org':a.div,'Location':a.location,'Original Location':originalOf(a,'location'),'Custodian':a.custodian,
     'Original Custodian':originalOf(a,'custodian'),'Category':a.category,'Acq Date':a.acqDate,'In Service Dt':a.inServiceDt,
-    'PO No':a.po,'Value':a.value,'Status':a.status,'Notes':a.notes,'Updated By':a.updatedBy,'Last Updated':a.updatedAt,
+    'PO No':a.po,'Value':a.value,'Status':a.lc==='D'?'Disposed':a.status,'Retire Date':a.retireDate||'','Net Book Value':a.lc==='D'?a.netBook:'',
+    'Survey Records':(a.survey||[]).map(s=>`${s.no||'?'} (${s.sh}${s.act?': '+s.act:''})`).join(' | '),
+    'Notes':a.notes,'Updated By':a.updatedBy,'Last Updated':a.updatedAt,
     'Edit History':(a.history||[]).map(h=>`[${h.t}] ${h.u}: ${h.f} "${h.old??''}" -> "${h.new??''}"`).join(' | ')}));
 }
 function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 function renderExport(m){
-  const edited=[...ST.assets.values()].filter(a=>a.status!=='Unreviewed'||(a.history||[]).length).length;
-  m.innerHTML=`<div class="page-h"><h2>Export audit results</h2></div>
-  <div class="note">Exports include original + updated field values, status, notes, full edit history, Updated By and Last Updated. All fields are quoted so commas in names never break the file. Ready for PeopleSoft / Property reconciliation.</div>
+  const A=[...ST.assets.values()];
+  const counts={audit:A.filter(a=>a.lc!=='D'&&(a.status!=='Unreviewed'||(a.history||[]).length)).length,
+    active:A.filter(a=>a.lc!=='D').length,disposed:A.filter(a=>a.lc==='D').length,all:A.length};
+  m.innerHTML=`<div class="page-h"><h2>Export</h2></div>
+  <div class="note">Exports include original + updated field values, status, notes, retire dates, matched survey records, Updated By, Last Updated and full edit history. All fields are quoted, so commas in names never break the file.</div>
   <div class="card">
-    <label style="display:flex;gap:10px;align-items:center;font-weight:600;font-size:14.5px"><input type="checkbox" id="exCh" checked>
-      Changed &amp; reviewed assets only (${edited.toLocaleString()}) — uncheck for all ${ST.assets.size.toLocaleString()}</label>
-    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+    <div class="field"><label>What to export</label>
+      <select id="exScope">
+        <option value="audit">Audit results — reviewed/changed active assets (${counts.audit.toLocaleString()})</option>
+        <option value="active">All active assets (${counts.active.toLocaleString()})</option>
+        <option value="disposed">Disposed/retired assets (${counts.disposed.toLocaleString()})</option>
+        <option value="all">Everything (${counts.all.toLocaleString()})</option>
+      </select></div>
+    <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
       <button class="btn btn-gold" id="exCsv">Download CSV</button>
       <button class="btn btn-dark" id="exXlsx">Download Excel (.xlsx)</button>
       <button class="btn" id="exBak">Backup everything (JSON)</button></div></div>`;
-  $('#exCsv').onclick=()=>{const rows=exportRows($('#exCh').checked);
+  const fname=()=>({audit:'PI_FY25-26_Audit_Results',active:'Active_Assets',disposed:'Disposed_Assets',all:'All_Assets'})[$('#exScope').value];
+  $('#exCsv').onclick=()=>{const rows=exportRows($('#exScope').value);
     const csv=Papa.unparse(rows,{quotes:true});
-    dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'PI_FY25-26_Audit_Results.csv');toast(rows.length+' rows exported')};
-  $('#exXlsx').onclick=()=>{const rows=exportRows($('#exCh').checked);
-    const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Audit Results');
-    XLSX.writeFile(wb,'PI_FY25-26_Audit_Results.xlsx');toast(rows.length+' rows exported')};
+    dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),fname()+'.csv');toast(rows.length.toLocaleString()+' rows exported')};
+  $('#exXlsx').onclick=()=>{const rows=exportRows($('#exScope').value);
+    const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Assets');
+    XLSX.writeFile(wb,fname()+'.xlsx');toast(rows.length.toLocaleString()+' rows exported')};
   $('#exBak').onclick=()=>{dl(new Blob([JSON.stringify({assets:[...ST.assets.values()],depts:ST.depts,exported:nowStr()})],
-    {type:'application/json'}),'beachprop-backup-'+nowStr().replace(/[: ]/g,'-')+'.json');toast('Backup downloaded')};
+    {type:'application/json'}),'beach-assets-backup-'+nowStr().replace(/[: ]/g,'-')+'.json');toast('Backup downloaded')};
 }
 
 /* ---------------- users ---------------- */
 function renderUsers(m){
   const admin=ST.session.role==='admin';
   m.innerHTML=`<div class="page-h"><h2>Users</h2></div>
+  <div class="note">Sign-in is universal: accounts live in the SharePoint <b>Users</b> list (plus the bundled starter account) and work on any device after it syncs. Passwords are stored only as salted PBKDF2 hashes — never plaintext.</div>
   <div class="card"><table class="plain"><tr><th>Username</th><th>Name</th><th>Role</th><th>Source</th></tr>
     ${ST.users.map(u=>`<tr><td class="mono">${esc(u.username)}</td><td>${esc(u.display)}</td><td>${esc(u.role)}</td>
-      <td class="muted">${u.local?'this device only':'SharePoint'}</td></tr>`).join('')}</table></div>
+      <td class="muted">${u.local?'this device (pending SharePoint row)':'shared'}</td></tr>`).join('')}</table></div>
   ${admin?`<div class="card"><b style="font-size:15px">Add a user</b>
-    <div class="note">This generates the salted password hash. Add the row to the <b>Users</b> SharePoint list and every device will pick it up on next sync. Passwords are never stored — only the hash.</div>
+    <div class="note">Generates the salted hash. The account works on this device immediately; paste the row into the SharePoint <b>Users</b> list to enable it everywhere.</div>
     <div class="field"><label>Username</label><input id="nuU" autocapitalize="none"></div>
     <div class="field"><label>Display name</label><input id="nuN"></div>
     <div class="field"><label>Role</label><select id="nuR"><option value="auditor">auditor</option><option value="admin">admin</option></select></div>
@@ -1080,7 +1258,7 @@ function renderSettings(m){
       <button class="btn" id="dataPull">Pull latest from SharePoint</button>
       <button class="btn btn-danger" id="dataReset">Reset this device</button></div>
     <div class="muted" style="font-size:12.5px;margin-top:9px">Reset wipes local data and reloads seed files — unsynced changes are lost.</div></div>
-  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Property · CSULB Property Management Office · build 1.0</div>`;
+  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 2.0</div>`;
   m.querySelectorAll('[data-th]').forEach(b=>b.onclick=async()=>{ST.theme=b.dataset.th;document.documentElement.dataset.theme=ST.theme;await kvSet('theme',ST.theme);renderSettings(m)});
   $('#cfSave').onclick=async()=>{ST.cfg={getUrl:$('#cgU').value.trim(),postUrl:$('#cpU').value.trim(),key:$('#ckY').value.trim()};
     await kvSet('cfg',ST.cfg);syncChip();toast('Sync settings saved')};
@@ -1108,7 +1286,6 @@ function renderMore(m){
 /* ---------------- init ---------------- */
 $('#lgGo').onclick=doLogin;
 $('#lgP').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
-$('#frGo').onclick=firstRunCreate;
 $('#logoutBtn').onclick=logout;
 $('#syncChip').onclick=()=>syncNow();
 window.addEventListener('online',()=>{if(ST.pending&&ST.cfg.postUrl)syncNow(true)});

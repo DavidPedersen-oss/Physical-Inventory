@@ -1,6 +1,10 @@
-# Beach Property — CSULB Asset Inventory Portal (FY 2025–26)
+# Beach Asset Management — CSULB Property Management Office
 
-A static web app for physical inventory audits under CSU Policy 1401.00. Runs on **GitHub Pages**, stores shared data in **SharePoint Lists**, and syncs through two **Power Automate** flows. Works offline in the field; changes queue locally and push when you have signal. No Google services, no Netlify, no fake sync states — a change shows "pending" until SharePoint actually accepts it.
+An all-encompassing asset management tool for the Property Management Office: campus-wide asset lookup, the FY 2025–26 **physical inventory** (CSU Policy 1401.00) as a dedicated section, plus **disposed/retired assets** and matched **survey records** as reference data. Runs on **GitHub Pages**, stores shared data in **SharePoint Lists**, and syncs through two **Power Automate** flows. Works offline in the field; changes queue locally and push when you have signal. A change shows "pending" until SharePoint actually accepts it.
+
+Branding follows the CSULB brand guidance: white-first open layout, the yellow/black palette with gray body copy, and no protected university marks (the wordmark here is plain text, so nothing needs clearance from Strategic Communications).
+
+**Sign in:** the bundled starter account is **`david` / `csulb123`** (admin). It works on every device out of the box. **Change this password before sharing the URL**: Users → Add a user → re-enter `david` with a new password, then put the generated row in the SharePoint Users list (it overrides the bundled one after a sync). Login is universal — accounts come from the Users list, not per-device.
 
 **Contents of this package**
 
@@ -8,7 +12,9 @@ A static web app for physical inventory audits under CSU Policy 1401.00. Runs on
 |---|---|
 | `index.html` | The entire app (works the moment Pages is live) |
 | `sw.js`, `manifest.json`, `icon-*.png`, `.nojekyll` | PWA: offline cache + Add to Home Screen |
-| `seed/assets.json` | 3,674 assets (multi-cost rows merged, values summed) |
+| `seed/assets.json` | 3,674 active assets (multi-cost rows merged, values summed; survey matches attached) |
+| `seed/disposed.json` | 8,311 disposed/retired assets from the disposal summary, 73% with matched survey records |
+| `seed/users.json` | Bundled starter login (david) |
 | `seed/departments.json` | 151 departments with Div/Org grouping + tracker completion |
 | `sharepoint-import/Assets.csv` | Ready to import into the SharePoint **Assets** list |
 | `sharepoint-import/Departments.csv` | Ready to import into **Departments** |
@@ -16,13 +22,15 @@ A static web app for physical inventory audits under CSU Policy 1401.00. Runs on
 
 **Pre-loaded state:** 78 departments marked complete in the FY25-26 tracker → their **783 assets are seeded as "Verified OK"** with `UpdatedBy = Tracker Import`, so they're distinguishable from field verifications. 5 departments have no name in the tracker (710, 727, 741, 796, 823) and appear under UNASSIGNED — fix them in the Departments list anytime.
 
+**Disposals & surveys:** every screen with asset lists has an **Active / All / Disposed** toggle. Disposed records are read-only reference data kept on each device (loaded from the seed, refreshable by importing a new `LB_AM_DISPOSAL` file) — they are *not* pushed to SharePoint, so the Assets list stays lean and the flows untouched. The Master Survey workbook (all 10 sheets, ~116k rows) was matched against assets by **Asset ID → Tag # → Serial**: 6,089 disposed assets and 473 active assets carry a ⚑ survey badge with survey #, disposal action/condition, dates and notes. New disposal imports won't gain survey matches automatically (the survey index is built at seed time) — re-run the data build if you ever need to refresh that.
+
 ---
 
 ## 1 · Deploy the app (5 minutes)
 
 1. Create a GitHub repo (e.g. `beach-property`) and upload everything in this folder (keep the `seed/` folder structure).
 2. Repo → **Settings → Pages** → Source: *Deploy from a branch* → `main` / root → Save.
-3. Open `https://<your-username>.github.io/beach-property/` — the app loads, seeds 3,674 assets into the device, and asks you to create the first **admin** account (stored on-device until you push it to the Users list in step 4).
+3. Open `https://<your-username>.github.io/beach-property/` — the app seeds 3,674 active + 8,311 disposed assets into the device. Sign in as `david` / `csulb123`.
 
 The app is fully usable at this point (search, audit, import, export) — sync just isn't shared yet. On phones: open the URL in Chrome/Safari → **Add to Home Screen** for a full-screen app that works offline.
 
@@ -46,7 +54,7 @@ EditHistory (multi)
 
 **Departments**: `Title (= dept ID)`, `DeptName`, `DivArea`, `SortOrder (Number)`, `Completed`, `Phase`
 
-**Users**: `Title (= username)`, `DisplayName`, `Role`, `Salt`, `PasswordHash`, `Active`
+**Users**: `Title (= username)`, `DisplayName`, `Role`, `Salt`, `PasswordHash`, `Active` — `sharepoint-import/Users.csv` already contains david's row (with the *current* hash; regenerate from the Users screen after changing the password)
 
 **AuditUpdates** (append-only log): `Title (= AssetID)`, `Field`, `OldValue (multi)`, `NewValue (multi)`, `Status`, `Timestamp`, `User`
 
@@ -143,19 +151,20 @@ On any device: sign in → **Settings** → paste the Read URL, Write URL, and s
 
 To set up the next auditor's phone in one step: **Copy config code** on your device, send it to them, they tap **Paste config code**.
 
-**Accounts:** the admin account you created at first launch exists only on your device until it's in SharePoint. Go to **Users → Add a user** (works for your own account too): it generates the `Salt` + `PasswordHash` values — paste that row into the **Users** list. After the next sync, that person can sign in on any device. Passwords are hashed with PBKDF2 (200,000 iterations, per-user salt); SharePoint never sees a plaintext password.
+**Accounts:** add auditors from **Users → Add a user** (admin only): it generates the `Salt` + `PasswordHash` values — paste that row into the **Users** list. After the next sync, that person can sign in on any device with the same credentials. Passwords are hashed with PBKDF2 (200,000 iterations, per-user salt); SharePoint never sees a plaintext password. Note that anything in a public repo is public — the bundled hash can't be reversed to the password, but changing the starter password promptly is still the right move.
 
 ---
 
 ## 5 · Daily use
 
-- **Search** is the home screen — tokenized, ranked, searches every field; scope chips narrow to Tag / Serial / Location / Custodian / Dept.
-- **Departments** groups by Div/Org with live progress meters. Inside a department: card view with one-tap ✓ Verified OK, or table view; **Mark unreviewed OK** (touches only Unreviewed) vs **Complete department** (sets *everything* to Verified OK — asks for confirmation since it overwrites Not Found/Damaged marks).
+- **Search** is the home screen — tokenized, ranked, searches every field; scope chips narrow to Tag / Serial / Location / Custodian / Dept; the Active/All/Disposed toggle widens it to retired assets.
+- **Physical Inventory** groups departments by Div/Org with live progress meters (active assets only). Inside a department: card view with one-tap ✓ Verified OK, or table view; **Mark unreviewed OK** (touches only Unreviewed) vs **Complete department** (sets *everything* to Verified OK — asks for confirmation since it overwrites Not Found/Damaged marks).
 - **All Assets**: 16-column sortable virtual table with status/division/department/no-location filters, select-all, and a bulk bar for status changes.
 - Every field edit is written to the asset's **edit history** (old → new, who, when) and to the **AuditUpdates** list.
 - **Sync chip** (top right): *N pending* = changes safely queued on-device; *Synced* = SharePoint confirmed them. Auto-pushes ~4s after a change and whenever you come back online; tap it to force a sync.
-- **Import** accepts a fresh PeopleSoft CSV/Excel or a previous app export — matched by Asset ID, multi-cost rows merged, quoted commas handled, with a preview separating *updates / new assets / conflicts* (a conflict = the file wants to change a field an auditor already edited; overwriting is opt-in).
-- **Export** produces `PI_FY25-26_Audit_Results.csv` / `.xlsx` with original + updated values, status, notes, Updated By, Last Updated and full edit history — every field quoted.
+- **Editing** location or custodian suggests existing values as you type — this department's values first, then campus-wide, ranked by how often they occur.
+- **Import** auto-detects the format: PeopleSoft extracts, **PMO inventory worksheets** (like the Music dept "Physical Inventory Listing" — header row found automatically, `PMO COMMENTS` mapped to statuses: OK / Photo of Tag → Verified OK, LOST/MISSING → Not Found, Not Verified → untouched, anything else → Other, with the comment kept as a note), **disposal summaries** (refreshes the retired-asset reference data locally), and this app's own exports. Always matched by Asset ID (leading zeros handled), multi-cost rows merged, quoted commas safe, and a preview separates *updates / new / conflicts* (conflict = the file wants to change a field an auditor already edited; overwriting is opt-in).
+- **Export** offers four scopes — audit results, all active, disposed, everything — as CSV/XLSX with original + updated values, status, retire dates, matched survey records, notes, Updated By, Last Updated and full edit history; every field quoted.
 
 ## Troubleshooting
 
