@@ -16,9 +16,11 @@ Branding follows the CSULB brand guidance: white-first open layout, the yellow/b
 | `seed/disposed.json` | 8,311 disposed/retired assets from the disposal summary, 73% with matched survey records |
 | `seed/users.json` | Bundled starter login (david) |
 | `seed/departments.json` | 151 departments with Div/Org grouping + tracker completion |
+| `sharepoint-import/Create-SharePointLists.ps1` | One script that creates all 5 lists **and** imports the CSVs (PnP PowerShell) |
 | `sharepoint-import/Assets.csv` | Ready to import into the SharePoint **Assets** list |
 | `sharepoint-import/Departments.csv` | Ready to import into **Departments** |
-| `sharepoint-import/Users.csv` | Column template for **Users** |
+| `sharepoint-import/Users.csv` | Column template for **Users** (contains david's row) |
+| `sharepoint-import/AuditUpdates.csv`, `ImportHistory.csv` | Column templates for the two log lists (one sample row — delete it after import) |
 
 **Pre-loaded state:** 78 departments marked complete in the FY25-26 tracker → their **783 assets are seeded as "Verified OK"** with `UpdatedBy = Tracker Import`, so they're distinguishable from field verifications. 5 departments have no name in the tracker (710, 727, 741, 796, 823) and appear under UNASSIGNED — fix them in the Departments list anytime.
 
@@ -40,6 +42,30 @@ The app is fully usable at this point (search, audit, import, export) — sync j
 
 ## 2 · Create the SharePoint lists (once)
 
+Three ways to do this, fastest first. Whichever you pick, the column layout in **Option C** is the contract the flows depend on.
+
+### Option A — run the script (2 minutes, does everything)
+
+`sharepoint-import/Create-SharePointLists.ps1` creates all five lists with the exact internal column names and types, renames the Title labels, and bulk-imports `Assets.csv`, `Departments.csv`, and `Users.csv`. In PowerShell 7:
+
+```powershell
+Install-Module PnP.PowerShell -Scope CurrentUser   # first time only
+cd sharepoint-import
+./Create-SharePointLists.ps1 -SiteUrl "https://csulb.sharepoint.com/sites/<your-site>" -ClientId "<app id>"
+```
+
+PnP sign-in needs an Entra ID app registration (a one-time `Register-PnPEntraIDAppForInteractiveLogin` if your account may register apps — details in the script header). If CSULB blocks app registrations, use Option B; the script is safe to re-run, skips lists/columns that already exist, and won't re-import into a list that has data.
+
+### Option B — import the CSVs in the browser (no PowerShell, ~10 minutes)
+
+In your SharePoint site, for each of the five files in `sharepoint-import/`: **New → List → From CSV** and name the list exactly `Assets`, `Departments`, `Users`, `AuditUpdates`, `ImportHistory`. The headers have no spaces, so the internal column names come out right automatically. Then verify three things per list:
+
+1. The **first CSV column landed as the list's Title column** (click it → *Column settings* — the flows filter on `Title`). If SharePoint created it as a separate column instead, delete the list and use Option C for that one.
+2. **Column types**: `SumAmount`, `SortOrder`, and the three `Rows*` columns should be **Number**; everything else **Single line of text** except `Description`, `Notes`, `EditHistory`, `OldValue`, `NewValue`, `Summary` which should be **Multiple lines of text**. SharePoint sometimes guesses Date for `AcqDate`/`InServiceDt`/`Timestamp` — set those back to text.
+3. Delete the `SAMPLE-DELETE-ME` row from **AuditUpdates** and **ImportHistory**.
+
+### Option C — build by hand (the reference layout)
+
 In your CSULB SharePoint site: **New → List**. Column names must match **exactly** and be created **without spaces** (SharePoint freezes the *internal* name at creation — `TagNumber`, never `Tag Number`). Use **Single line of text** for everything except where noted; set EditHistory/Notes/Summary to **Multiple lines of text (plain text)**.
 
 **Assets** — rename the default *Title* column's label to "AssetID" if you like (internal name stays `Title`, which is what the flow uses):
@@ -60,7 +86,7 @@ EditHistory (multi)
 
 **ImportHistory**: `Title (= timestamp)`, `User`, `Filename`, `RowsMatched (Number)`, `RowsAdded (Number)`, `RowsConflicted (Number)`, `Summary (multi)`
 
-**Load the data:** easiest path is *New → List → From CSV* using `sharepoint-import/Assets.csv` and `Departments.csv` (check column types after), or create the lists first and use *Edit in grid view* → paste. 3,674 rows pastes fine in grid view in a few chunks.
+**Load the data (Option C only):** with the lists created, use *Edit in grid view* → paste from the CSVs. 3,674 rows pastes fine in grid view in a few chunks. (Options A and B already loaded the data.)
 
 ---
 
