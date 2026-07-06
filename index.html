@@ -616,6 +616,15 @@ function renderSearch(m){
       +res.slice(0,max).map(a=>assetCard(a)).join('');
   };
   $('#gq').addEventListener('input',debounce(run,160));
+  $('#gq').addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    const q=$('#gq').value.trim();if(q.length<2)return;
+    const res=searchAssets(q,ST.scope);
+    // exactly one hit, or an exact tag/id match — open it (fast path for scanned tags)
+    const exact=res.filter(a=>a.tag.toLowerCase()===q.toLowerCase()||a.id===q.replace(/^0+/,''));
+    const hit=res.length===1?res[0]:(exact.length===1?exact[0]:null);
+    if(hit)openAsset(hit.id);
+  });
   $('#gqClear').onclick=()=>{$('#gq').value='';run();$('#gq').focus()};
   m.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{ST.scope=b.dataset.scope;renderSearch(m);$('#gq').focus()});
   bindListEvents($('#sres'));
@@ -1072,7 +1081,7 @@ function renderImport(m){
   $('#impPick').onclick=()=>$('#impFile').click();
   $('#impFile').onchange=e=>{handleImportFiles([...e.target.files]);e.target.value=''};
   const dz=$('#impDrop');
-  const hl=on=>{dz.style.borderColor=on?'var(--gold)':'';dz.style.background=on?'var(--gold-soft)':''};
+  const hl=on=>{dz.style.borderColor=on?'var(--gold)':'';dz.style.background=on?'var(--accent-soft)':''};
   dz.ondragover=e=>{e.preventDefault();hl(true)};
   dz.ondragleave=()=>hl(false);
   dz.ondrop=e=>{e.preventDefault();hl(false);
@@ -1138,6 +1147,7 @@ async function handleImportFiles(files){
   const label=fs=>fs.length===1?fs[0].name:fs.map(p=>p.name).join(' + ');
   if(upd.rows.length)previewImport(diffImport(upd.rows),label(updFiles),upd.rows.length,updFiles.reduce((n,p)=>n+p.skipped,0),$('#impMainBox'));
   if(disp.rows.length)previewDisposalImport(disp.rows,label(dispFiles),$('#impDispBox'));
+  out.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function importSectionDone(box,msg){
   box.innerHTML=`<div class="note" style="border-color:var(--ok);color:var(--ok)">✓ ${esc(msg)}</div>`;
@@ -1158,6 +1168,8 @@ function previewDisposalImport(inc,fname,box){
     <div class="acts" style="display:flex;justify-content:flex-end"><button class="btn btn-gold" id="dpGo">Apply disposal import</button></div></div>
   ${clash.length?`<div class="card" style="border-color:var(--warn)"><b style="color:var(--warn)">Active → Disposed (first 25)</b>${clash.slice(0,25).map(r=>`<div class="imp-row"><span class="mono">${esc(r.tag||r.id)}</span><span>${esc(r.desc)} · retired ${esc(r.retireDate)}</span></div>`).join('')}</div>`:''}`;
   $('#dpGo').onclick=async()=>{
+    const btn=$('#dpGo');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Applying…';
+    await new Promise(r=>setTimeout(r,30)); // let the spinner paint before the write loop
     const put=[];
     for(const r of inc){
       const ex=ST.assets.get(r.id);
@@ -1175,6 +1187,12 @@ function previewDisposalImport(inc,fname,box){
 function previewImport(d,fname,total,skipped,box){
   box=box||$('#impOut');
   const chRow=u=>`<div class="imp-row"><span class="mono">${esc(u.asset.tag||u.asset.id)}</span><span>${u.ch.concat(u.cf||[]).map(c=>`<b>${esc(c.f)}</b>: ${esc(c.old)||'<i>blank</i>'} → ${esc(c.new)}`).join(' · ')}</span></div>`;
+  // summary of incoming status changes — the main thing a physical-inventory import does
+  const stCh={};
+  for(const u of d.updates.concat(d.conflicts))for(const c of u.ch.concat(u.cf||[]))if(c.f==='status')stCh[c.new]=(stCh[c.new]||0)+1;
+  const stLine=Object.keys(stCh).length?`<div style="display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;margin-top:11px">
+      <span class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Status changes</span>
+      ${Object.entries(stCh).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<span style="display:inline-flex;align-items:center;gap:4px">${pill(s)}<b class="mono" style="font-size:12px">×${n.toLocaleString()}</b></span>`).join('')}</div>`:'';
   box.innerHTML=`<div class="card" data-imp-pending><b>${esc(fname)}</b> — ${total.toLocaleString()} unique assets read${skipped?` · ${skipped} rows skipped (no Asset ID)`:''}
     <table class="plain" style="margin-top:10px">
       <tr><th></th><th>Count</th><th>Apply?</th></tr>
@@ -1182,13 +1200,26 @@ function previewImport(d,fname,total,skipped,box){
       <tr><td>New assets</td><td>${d.news.length}</td><td><input type="checkbox" id="apN" ${d.news.length?'checked':'disabled'}></td></tr>
       <tr><td>Conflicts <span class="muted">(field already edited by an auditor)</span></td><td>${d.conflicts.length}</td><td><input type="checkbox" id="apC" ${d.conflicts.length?'':'disabled'}> <span class="muted" style="font-size:11.5px">overwrite</span></td></tr>
       <tr><td>Unchanged</td><td>${d.unchanged.length}</td><td>—</td></tr>
-    </table>
+    </table>${stLine}
     <div class="acts" style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btn-gold" id="apGo">Apply import</button></div></div>
-  ${d.updates.length?`<div class="card"><b style="font-size:14px">Updates (first 25)</b>${d.updates.slice(0,25).map(chRow).join('')}</div>`:''}
-  ${d.conflicts.length?`<div class="card" style="border-color:var(--warn)"><b style="font-size:14px;color:var(--warn)">Conflicts (first 25)</b>${d.conflicts.slice(0,25).map(chRow).join('')}</div>`:''}
-  ${d.news.length?`<div class="card"><b style="font-size:14px">New assets (first 25)</b>${d.news.slice(0,25).map(r=>`<div class="imp-row"><span class="mono">${esc(r.tag||r.id)}</span><span>${esc(r.desc)} · ${esc(deptLabel(r.dept))}</span></div>`).join('')}</div>`:''}`;
+  <div data-sec="u"></div><div data-sec="c"></div><div data-sec="n"></div>`;
+  const section=(el,title,items,rowFn,warn)=>{
+    if(!items.length)return;
+    const paint=all=>{
+      el.innerHTML=`<div class="card"${warn?' style="border-color:var(--warn)"':''}><b style="font-size:14px${warn?';color:var(--warn)':''}">${title} (${items.length.toLocaleString()})</b>
+        ${(all?items:items.slice(0,25)).map(rowFn).join('')}
+        ${!all&&items.length>25?`<div style="text-align:center;margin-top:10px"><button class="btn btn-sm" data-more>Show all ${items.length.toLocaleString()}</button></div>`:''}</div>`;
+      const mb=el.querySelector('[data-more]');if(mb)mb.onclick=()=>paint(true);
+    };
+    paint(false);
+  };
+  section(box.querySelector('[data-sec="u"]'),'Updates',d.updates,chRow);
+  section(box.querySelector('[data-sec="c"]'),'Conflicts',d.conflicts,chRow,true);
+  section(box.querySelector('[data-sec="n"]'),'New assets',d.news,r=>`<div class="imp-row"><span class="mono">${esc(r.tag||r.id)}</span><span>${esc(r.desc)} · ${esc(deptLabel(r.dept))}</span></div>`);
   $('#apGo').onclick=async()=>{
     const doU=$('#apU').checked,doN=$('#apN').checked,doC=$('#apC').checked;
+    const btn=$('#apGo');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Applying…';
+    await new Promise(r=>setTimeout(r,30)); // let the spinner paint before the write loop
     let nU=0,nN=0,nC=0;
     const apply=v=>(c=>v[c.f]=c.f==='value'?Number(c.new):c.new);
     if(doU)for(const u of d.updates){u.ch.forEach(apply(u.asset));await saveAsset(u.asset,u.ch,true);nU++}
