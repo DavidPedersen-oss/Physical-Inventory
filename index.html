@@ -1062,40 +1062,93 @@ function renderImport(m){
   · <b>PMO inventory worksheets</b> (Physical Inventory Listing — like the Music dept sheet) — header found automatically, <b>PMO COMMENTS</b> mapped to statuses: "OK"/"Photo of Tag" → Verified OK, "LOST/MISSING" → Not Found, "Not Verified" → status untouched, anything else → Other; the comment is kept as a note<br>
   · <b>Disposal summaries</b> (LB_AM_DISPOSAL…) — adds/refreshes retired assets (kept on this device as reference data, not synced)<br>
   · <b>This app's own exports</b> — for round-tripping<br>
+  You can select <b>several files at once</b> (or drag &amp; drop them below) — they are combined into one preview; where two files disagree on the same asset, the file listed later wins.
   Quoted commas (e.g. <span class="mono">"Last, First"</span>) are always handled. Nothing changes until you review the preview.</div>
-  <div class="card" style="text-align:center;padding:26px">
-    <input type="file" id="impFile" accept=".csv,.xlsx,.xls" class="hidden">
-    <button class="btn btn-gold" id="impPick">Choose file…</button>
-    <div class="muted" style="font-size:12.5px;margin-top:9px">.csv · .xlsx · .xls</div></div>
+  <div class="card" id="impDrop" style="text-align:center;padding:26px;border:1.5px dashed var(--line2);transition:border-color .15s,background .15s">
+    <input type="file" id="impFile" accept=".csv,.xlsx,.xls" multiple class="hidden">
+    <button class="btn btn-gold" id="impPick">Choose files…</button>
+    <div class="muted" style="font-size:12.5px;margin-top:9px">.csv · .xlsx · .xls — pick or drop one or more files</div></div>
   <div id="impOut"></div>`;
   $('#impPick').onclick=()=>$('#impFile').click();
-  $('#impFile').onchange=async e=>{
-    const file=e.target.files[0];if(!file)return;
-    $('#impOut').innerHTML='<div class="card"><span class="spin"></span> Reading '+esc(file.name)+'…</div>';
-    try{
-      let aoa;
-      if(/\.csv$/i.test(file.name)){
-        aoa=await new Promise((res,rej)=>Papa.parse(file,{skipEmptyLines:true,complete:r=>res(r.data),error:rej}));
-      }else{
-        const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});
-        aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
-      }
-      const hi=findHeaderRow(aoa);
-      if(hi<0)throw new Error('Could not find a header row with "Asset ID" (or Tag # + Description) in the first 12 rows.');
-      const{rows:inc,skipped}=normalizeRows(aoaToObjects(aoa,hi));
-      if(!inc.length)throw new Error('No rows with a numeric Asset ID found below the header.');
-      if(inc.filter(r=>r.isDisposal).length>inc.length/2){previewDisposalImport(inc,file.name,skipped);return}
-      const d=diffImport(inc);
-      previewImport(d,file.name,inc.length,skipped);
-    }catch(err){$('#impOut').innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)">Import failed: ${esc(err.message||err)}</div>`}
-    e.target.value='';
-  };
+  $('#impFile').onchange=e=>{handleImportFiles([...e.target.files]);e.target.value=''};
+  const dz=$('#impDrop');
+  const hl=on=>{dz.style.borderColor=on?'var(--gold)':'';dz.style.background=on?'var(--gold-soft)':''};
+  dz.ondragover=e=>{e.preventDefault();hl(true)};
+  dz.ondragleave=()=>hl(false);
+  dz.ondrop=e=>{e.preventDefault();hl(false);
+    const fs=[...e.dataTransfer.files].filter(f=>/\.(csv|xlsx|xls)$/i.test(f.name));
+    if(fs.length)handleImportFiles(fs);
+    else $('#impOut').innerHTML='<div class="note" style="border-color:var(--bad);color:var(--bad)">No .csv/.xlsx/.xls files in that drop.</div>'};
 }
-function previewDisposalImport(inc,fname,skipped){
+async function parseImportFile(file){
+  let aoa;
+  if(/\.csv$/i.test(file.name)){
+    aoa=await new Promise((res,rej)=>Papa.parse(file,{skipEmptyLines:true,complete:r=>res(r.data),error:rej}));
+  }else{
+    const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});
+    aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
+  }
+  const hi=findHeaderRow(aoa);
+  if(hi<0)throw new Error('Could not find a header row with "Asset ID" (or Tag # + Description) in the first 12 rows.');
+  const{rows,skipped}=normalizeRows(aoaToObjects(aoa,hi));
+  if(!rows.length)throw new Error('No rows with a numeric Asset ID found below the header.');
+  return{rows,skipped};
+}
+function mergeImportRows(files){
+  // combine rows from several files by Asset ID — later file wins per non-blank field
+  const by=new Map();let overlap=0;
+  for(const p of files)for(const r of p.rows){
+    const ex=by.get(r.id);
+    if(!ex){by.set(r.id,{...r});continue}
+    overlap++;
+    for(const k in r){
+      if(k==='id')continue;
+      const v=r[k];
+      if(k==='value'||k==='netBook'){if(v)ex[k]=v}
+      else if(k==='isDisposal')ex[k]=ex[k]||v;
+      else if(k==='noteAdd'){if(v&&!(ex.noteAdd||'').includes(v))ex.noteAdd=ex.noteAdd?ex.noteAdd+'; '+v:v}
+      else if(String(v??'').length)ex[k]=v;
+    }
+  }
+  return{rows:[...by.values()],overlap};
+}
+async function handleImportFiles(files){
+  if(!files.length)return;
+  const out=$('#impOut');
+  out.innerHTML=`<div class="card"><span class="spin"></span> Reading ${files.length===1?esc(files[0].name):files.length+' files'}…</div>`;
+  const parsed=[],errors=[];
+  for(const f of files){
+    try{const p=await parseImportFile(f);p.name=f.name;
+      p.isDisp=p.rows.filter(r=>r.isDisposal).length>p.rows.length/2;parsed.push(p)}
+    catch(err){errors.push({name:f.name,error:err.message||String(err)})}
+  }
+  if(!parsed.length){
+    out.innerHTML=errors.map(e=>`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(e.name)}</b> — import failed: ${esc(e.error)}</div>`).join('');
+    return;
+  }
+  const updFiles=parsed.filter(p=>!p.isDisp),dispFiles=parsed.filter(p=>p.isDisp);
+  const upd=mergeImportRows(updFiles),disp=mergeImportRows(dispFiles);
+  out.innerHTML=`${files.length>1||errors.length?'<div class="card" id="impFilesBox"></div>':''}<div id="impMainBox"></div><div id="impDispBox"></div>`;
+  if(files.length>1||errors.length){
+    $('#impFilesBox').innerHTML=`<b style="font-size:14px">${parsed.length} of ${files.length} file${files.length>1?'s':''} read</b>
+      ${parsed.map(p=>`<div class="imp-row"><span class="mono" style="word-break:break-all">${esc(p.name)}</span><span>${p.rows.length.toLocaleString()} assets${p.skipped?` · ${p.skipped} rows skipped`:''}${p.isDisp?' · <b>disposal summary</b>':''}</span></div>`).join('')}
+      ${errors.map(e=>`<div class="imp-row" style="color:var(--bad)"><span class="mono" style="word-break:break-all">${esc(e.name)}</span><span>failed: ${esc(e.error)}</span></div>`).join('')}
+      ${upd.overlap||disp.overlap?`<div class="note" style="margin-top:10px;margin-bottom:0">${(upd.overlap+disp.overlap).toLocaleString()} row${upd.overlap+disp.overlap>1?'s':''} matched an asset already read from an earlier file — where they disagree, the later file wins.</div>`:''}`;
+  }
+  const label=fs=>fs.length===1?fs[0].name:fs.map(p=>p.name).join(' + ');
+  if(upd.rows.length)previewImport(diffImport(upd.rows),label(updFiles),upd.rows.length,updFiles.reduce((n,p)=>n+p.skipped,0),$('#impMainBox'));
+  if(disp.rows.length)previewDisposalImport(disp.rows,label(dispFiles),$('#impDispBox'));
+}
+function importSectionDone(box,msg){
+  box.innerHTML=`<div class="note" style="border-color:var(--ok);color:var(--ok)">✓ ${esc(msg)}</div>`;
+  if(!document.querySelector('[data-imp-pending]'))location.hash='#/stats';
+}
+function previewDisposalImport(inc,fname,box){
+  box=box||$('#impOut');
   const news=inc.filter(r=>!ST.assets.has(r.id));
   const upd=inc.filter(r=>{const ex=ST.assets.get(r.id);return ex&&ex.lc==='D'});
   const clash=inc.filter(r=>{const ex=ST.assets.get(r.id);return ex&&ex.lc!=='D'});
-  $('#impOut').innerHTML=`<div class="card"><b>${esc(fname)}</b> — detected as a <b>disposal summary</b> (${inc.length.toLocaleString()} retired assets)
+  box.innerHTML=`<div class="card" data-imp-pending><b>${esc(fname)}</b> — detected as a <b>disposal summary</b> (${inc.length.toLocaleString()} retired assets)
     <table class="plain" style="margin-top:10px">
       <tr><td>New disposal records</td><td>${news.length}</td></tr>
       <tr><td>Existing disposal records to refresh</td><td>${upd.length}</td></tr>
@@ -1116,13 +1169,13 @@ function previewDisposalImport(inc,fname,skipped){
     }
     await dbPutAssets(put);
     toast(`Disposal data applied — ${put.length.toLocaleString()} records`);
-    location.hash='#/stats';
+    importSectionDone(box,`Disposal data applied — ${put.length.toLocaleString()} records`);
   };
 }
-function previewImport(d,fname,total,skipped){
-  const box=$('#impOut');
+function previewImport(d,fname,total,skipped,box){
+  box=box||$('#impOut');
   const chRow=u=>`<div class="imp-row"><span class="mono">${esc(u.asset.tag||u.asset.id)}</span><span>${u.ch.concat(u.cf||[]).map(c=>`<b>${esc(c.f)}</b>: ${esc(c.old)||'<i>blank</i>'} → ${esc(c.new)}`).join(' · ')}</span></div>`;
-  box.innerHTML=`<div class="card"><b>${esc(fname)}</b> — ${total.toLocaleString()} unique assets read${skipped?` · ${skipped} rows skipped (no Asset ID)`:''}
+  box.innerHTML=`<div class="card" data-imp-pending><b>${esc(fname)}</b> — ${total.toLocaleString()} unique assets read${skipped?` · ${skipped} rows skipped (no Asset ID)`:''}
     <table class="plain" style="margin-top:10px">
       <tr><th></th><th>Count</th><th>Apply?</th></tr>
       <tr><td>Field updates</td><td>${d.updates.length}</td><td><input type="checkbox" id="apU" ${d.updates.length?'checked':'disabled'}></td></tr>
@@ -1152,7 +1205,7 @@ function previewImport(d,fname,total,skipped){
       Summary:JSON.stringify({updates:nU,news:nN,conflictsApplied:nC,unchanged:d.unchanged.length})},t:nowStr()});
     ST.pending=(await qAll()).filter(o=>!o.done).length;syncChip();scheduleAutoSync();
     toast(`Import applied — ${nU+nC} updated, ${nN} added`);
-    location.hash='#/stats';
+    importSectionDone(box,`Import applied — ${nU+nC} updated, ${nN} added`);
   };
 }
 
