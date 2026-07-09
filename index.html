@@ -321,12 +321,14 @@ input[type=checkbox]{width:19px;height:19px;accent-color:var(--accent);flex:none
 /* ============ Stats ============ */
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:18px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;
-  box-shadow:var(--shadow-xs);transition:box-shadow .13s var(--ease)}
-.kpi[style*="cursor"]:hover{box-shadow:var(--shadow-sm)}
+  box-shadow:var(--shadow-xs);transition:box-shadow .16s var(--ease),transform .16s var(--ease)}
+.kpi[style*="cursor"]:hover{box-shadow:var(--shadow-sm);transform:translateY(-2px)}
 .kpi .v{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-.02em}
 .kpi .l{font-size:11.5px;color:var(--ink2);font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
-.kpi.gold{display:flex;align-items:center;gap:14px;grid-column:span 2;
+.kpi.gold{position:relative;display:flex;align-items:center;gap:14px;grid-column:span 2;overflow:hidden;
   background:linear-gradient(135deg,#1C1B10 0%,#100F07 100%);border-color:#2B2A1A}
+.kpi.gold::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(220px 140px at 88% -20%,rgba(255,199,44,.20),transparent 65%)}
 .kpi.gold .v{color:var(--gold)} .kpi.gold .l{color:#B9B7A6}
 .ring{--p:0;position:relative;width:62px;height:62px;flex:none;display:flex;align-items:center;justify-content:center}
 .ring::before{content:"";position:absolute;inset:0;border-radius:50%;
@@ -350,13 +352,14 @@ input[type=checkbox]{width:19px;height:19px;accent-color:var(--accent);flex:none
 .modal .acts{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}
 #toasts{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:150;display:flex;flex-direction:column;
   gap:8px;width:min(420px,92vw)}
-.toast{background:var(--header-bg);color:var(--header-ink);padding:12px 16px 12px 14px;border-radius:13px;
-  font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.1);
-  display:flex;align-items:center;gap:10px;animation:dropin .22s var(--ease)}
+.toast{background:rgba(20,19,10,.82);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);
+  color:var(--header-ink);padding:12px 16px 12px 14px;border-radius:99px;
+  font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.12);
+  display:flex;align-items:center;gap:10px;animation:dropin .24s var(--ease)}
 .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold);flex:none;
   box-shadow:0 0 0 3px rgba(255,199,44,.2)}
 .toast.err::before{background:#FF6B5E;box-shadow:0 0 0 3px rgba(255,107,94,.2)}
-@keyframes dropin{from{opacity:0;transform:translateY(-10px)}}
+@keyframes dropin{from{opacity:0;transform:translateY(-10px) scale(.96)}}
 .seg{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
 .seg button{padding:7px 14px;font-size:13px;font-weight:650;color:var(--ink2);min-height:34px;border-radius:8px;
   transition:all .13s var(--ease)}
@@ -374,6 +377,19 @@ table.plain tr:last-child td{border-bottom:none}
 .spin{width:18px;height:18px;border:2.5px solid var(--line2);border-top-color:var(--gold);border-radius:50%;
   animation:rot .7s linear infinite;display:inline-block;vertical-align:-4px}
 @keyframes rot{to{transform:rotate(360deg)}}
+
+/* ============ Command palette ============ */
+.cp-modal{background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
+  border:1px solid rgba(255,255,255,.4)}
+[data-theme="dark"] .cp-modal{background:rgba(26,26,17,.78);border-color:rgba(255,255,255,.08)}
+.cp-item{cursor:pointer;transition:background .1s var(--ease)}
+.cp-item:hover{background:var(--surface2)}
+#cpQ{width:100%}
+
+/* ============ Scanner ============ */
+.scan-wrap{position:relative;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:4/3;max-height:60vh}
+.scan-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+.scan-frame{position:absolute;inset:12%;border:2.5px solid var(--gold);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35);pointer-events:none}
 </style>
 </head>
 <body>
@@ -405,6 +421,7 @@ table.plain tr:last-child td{border-bottom:none}
       <span class="ttl"><b>Beach Assets</b><em>CSULB Property Management</em></span>
     </span>
     <span class="grow"></span>
+    <button class="btn btn-sm" id="cmdBtn" title="Quick actions (Ctrl/Cmd+K)" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#CFCDBE">⌘K</button>
     <button class="sync-chip" id="syncChip" title="Sync status — tap to sync now"><span class="dot"></span><span id="syncTxt">Sync off</span></button>
     <span class="user-pill"><span class="avatar" id="uAv">?</span><span class="uname" id="whoami"></span>
       <button class="btn btn-sm" id="logoutBtn" title="Sign out">Sign out</button>
@@ -448,15 +465,20 @@ function confirmDlg(title,body,okLabel,danger){return new Promise(res=>{
 /* ---------------- state ---------------- */
 const ST={assets:new Map(),depts:[],deptMap:{},users:[],session:null,sel:new Set(),
   cfg:{getUrl:'',postUrl:'',key:''},route:{v:'search'},theme:'light',pending:0,lastSync:'',syncLog:[],
-  q:'',scope:'all',deptView:{},sort:{k:'tag',dir:1},flt:{q:'',status:'',div:'',dept:'',noloc:false,survey:false},busy:false,lc:'A'};
+  q:'',scope:'all',deptView:{},sort:{k:'tag',dir:1},flt:{q:'',status:'',div:'',dept:'',noloc:false,survey:false},busy:false,lc:'A',
+  photoIds:new Set()};
 const lcPass=a=>ST.lc==='ALL'||(ST.lc==='D'?a.lc==='D':a.lc!=='D');
 function lcSeg(){return `<span class="lc-seg">${[['A','Active'],['ALL','All'],['D','Disposed']].map(([k,l])=>`<button data-lc="${k}" class="${ST.lc===k?'on':''}">${l}</button>`).join('')}</span>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-lc]');if(b){ST.lc=b.dataset.lc;ST.sel.clear();render()}});
 
 /* ---------------- IndexedDB ---------------- */
 let idb;
-function dbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('beachprop',1);
-  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('kv');d.createObjectStore('assets',{keyPath:'id'});d.createObjectStore('queue',{keyPath:'qid',autoIncrement:true})};
+function dbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('beachprop',2);
+  r.onupgradeneeded=(e)=>{const d=r.result;
+    if(!d.objectStoreNames.contains('kv'))d.createObjectStore('kv');
+    if(!d.objectStoreNames.contains('assets'))d.createObjectStore('assets',{keyPath:'id'});
+    if(!d.objectStoreNames.contains('queue'))d.createObjectStore('queue',{keyPath:'qid',autoIncrement:true});
+    if(!d.objectStoreNames.contains('photos'))d.createObjectStore('photos')};
   r.onsuccess=()=>{idb=r.result;res()};r.onerror=()=>rej(r.error)})}
 const tx=(st,m)=>idb.transaction(st,m).objectStore(st);
 const kvGet=k=>new Promise(r=>{const q=tx('kv').get(k);q.onsuccess=()=>r(q.result)});
@@ -469,6 +491,12 @@ const qAdd=op=>new Promise(r=>{const q=tx('queue','readwrite').add(op);q.onsucce
 const qAll=()=>new Promise(r=>{const q=tx('queue').getAll();q.onsuccess=()=>r(q.result||[])});
 const qPut=op=>new Promise(r=>{const q=tx('queue','readwrite').put(op);q.onsuccess=()=>r()});
 const qDel=id=>new Promise(r=>{const q=tx('queue','readwrite').delete(id);q.onsuccess=()=>r()});
+const qClear=()=>new Promise(r=>{const q=tx('queue','readwrite').clear();q.onsuccess=()=>r()});
+const phGet=id=>new Promise(r=>{const q=tx('photos').get(id);q.onsuccess=()=>r(q.result)});
+const phPut=(id,dataUrl)=>new Promise(r=>{const q=tx('photos','readwrite').put(dataUrl,id);q.onsuccess=()=>r()});
+const phDel=id=>new Promise(r=>{const q=tx('photos','readwrite').delete(id);q.onsuccess=()=>r()});
+const phAllKeys=()=>new Promise(r=>{const q=tx('photos').getAllKeys();q.onsuccess=()=>r(q.result||[])});
+const phAll=()=>new Promise(r=>{const q=tx('photos').getAll();q.onsuccess=()=>r(q.result||[])});
 
 /* ---------------- crypto ---------------- */
 const buf2hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -513,6 +541,7 @@ async function boot(){
   }
   ST.depts.forEach(d=>ST.deptMap[d.deptId]=d);
   ST.pending=(await qAll()).filter(o=>!o.done).length;
+  ST.photoIds=new Set(await phAllKeys());
   if(!window.crypto||!crypto.subtle){
     $('#lgErr').textContent='Secure sign-in needs HTTPS (or localhost). Open the GitHub Pages URL.';
     $('#lgGo').disabled=true;
@@ -630,6 +659,35 @@ async function pullData(){
   await logSync({ok:true,msg:`Pulled ${merged} assets from SharePoint`});
   if(typeof render==='function')render();
 }
+async function nukeAndReseed(){
+  await dbClearAssets();await qClear();ST.assets.clear();ST.sel.clear();
+  const bust='?_='+Date.now();
+  const [a,d]=await Promise.all([fetch('seed/assets.json'+bust).then(r=>r.json()),fetch('seed/departments.json'+bust).then(r=>r.json())]);
+  await dbPutAssets(a);await kvSet('depts',d);
+  a.forEach(x=>{if(!x.lc)x.lc='A';if(!x.survey)x.survey=[];ST.assets.set(x.id,x)});
+  ST.depts=d;ST.deptMap={};ST.depts.forEach(x=>ST.deptMap[x.deptId]=x);
+  let dispN=0;
+  try{const disp=await fetch('seed/disposed.json'+bust).then(r=>r.json());
+    disp.forEach(x=>ST.assets.set(x.id,x));await dbPutAssets(disp);dispN=disp.length;
+  }catch(e){console.warn('disposed reseed failed',e)}
+  ST.pending=0;ST.lastSync='';await kvSet('lastSync','');
+  await logSync({ok:true,msg:`Nuked local data — reseeded ${a.length.toLocaleString()} active + ${dispN.toLocaleString()} disposed from fresh exports`});
+  let pulled=false;
+  if(ST.cfg.getUrl){try{await pullData();pulled=true}catch(e){console.warn('post-nuke pull failed',e)}}
+  return{active:a.length,disposed:dispN,pulled};
+}
+async function promptNuke(){
+  const pendingWarn=ST.pending>0?`<br><br><b style="color:var(--bad)">⚠ You have ${ST.pending} unsynced change(s) on this device — they will be permanently lost.</b> Sync now first if you want to keep them.`:'';
+  if(!await confirmDlg('Nuke & rebuild data',
+    `This erases every local asset and department record and the pending sync queue on <b>this device only</b>, then reloads fresh from the bundled seed exports${ST.cfg.getUrl?' and immediately re-pulls the latest from SharePoint':''}. Your sign-in and sync settings are kept. SharePoint itself is not touched.${pendingWarn}`,
+    'Nuke & rebuild',true))return;
+  ST.busy=true;syncChip();toast('Rebuilding local data…');
+  try{
+    const r=await nukeAndReseed();
+    toast(`Rebuilt — ${r.active.toLocaleString()} active + ${r.disposed.toLocaleString()} disposed loaded${r.pulled?' · synced with SharePoint':''}`);
+  }catch(e){toast('Rebuild failed: '+(e.message||e),1)}
+  finally{ST.busy=false;syncChip();render()}
+}
 async function testConnection(){
   if(!ST.cfg.getUrl){toast('Enter the Read flow URL first',1);return}
   try{const url=ST.cfg.getUrl+(ST.cfg.getUrl.includes('?')?'&':'?')+'k='+encodeURIComponent(ST.cfg.key)+'&ping=1';
@@ -671,12 +729,28 @@ function enterApp(){
 function deptLabel(id){const d=ST.deptMap[id];return d&&d.name?d.name:('Dept '+id)}
 function deptPad(id){return String(id).padStart(5,'0')}
 const srvBadge=a=>(a.survey&&a.survey.length)?`<span class="srv-badge" title="Survey record(s) on file">⚑ Survey ×${a.survey.length}</span>`:'';
+const photoBadge=a=>ST.photoIds.has(a.id)?`<span class="srv-badge" style="background:var(--surface2);color:var(--ink2);border-color:var(--line2)" title="Photo attached (this device)">📷</span>`:'';
+function downscaleImage(file,maxDim=1280,quality=.72){
+  return new Promise((resolve,reject)=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxDim||h>maxDim){const s=maxDim/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s)}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Could not read image'))};
+    img.src=url;
+  });
+}
 function assetCard(a,opts={}){
   const disp=a.lc==='D',ok=a.status==='Verified OK';
   return `<div class="card acard" data-aid="${esc(a.id)}">
     ${opts.check&&!disp?`<input type="checkbox" class="ck" data-ck="${esc(a.id)}" ${ST.sel.has(a.id)?'checked':''}>`:''}
     <div class="body" data-open="${esc(a.id)}">
-      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="tagchip">${esc(a.tag)||'<span class="muted">no tag</span>'}</span>${pill(disp?'Disposed':a.status)}${srvBadge(a)}</div>
+      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="tagchip">${esc(a.tag)||'<span class="muted">no tag</span>'}</span>${pill(disp?'Disposed':a.status)}${srvBadge(a)}${photoBadge(a)}</div>
       <div class="desc">${esc(a.desc)}</div>
       <div class="kv">${disp
         ?`<span>Retired <b class="mono">${esc(a.retireDate)||'—'}</b></span><span>${esc(a.deptName||deptLabel(a.dept))}</span><span class="mono">${fmt$(a.value)}</span>`
@@ -743,7 +817,8 @@ function renderSearch(m){
   <div class="search-wrap"><span class="s-ico">${I.search}</span>
     <input id="gq" type="search" placeholder="Tag, serial, description, location, custodian…" value="${esc(ST.q)}" autocomplete="off">
     <button class="s-clear ${ST.q?'':'hidden'}" id="gqClear">✕</button></div>
-  <div class="chip-row" style="align-items:center">${lcSeg()}<span style="width:4px"></span>${SCOPES.map(([k,l])=>`<button class="chip ${ST.scope===k?'on':''}" data-scope="${k}">${l}</button>`).join('')}</div>
+  <div class="chip-row" style="align-items:center">${lcSeg()}<span style="width:4px"></span>${SCOPES.map(([k,l])=>`<button class="chip ${ST.scope===k?'on':''}" data-scope="${k}">${l}</button>`).join('')}
+    <button class="chip" id="gqScan" style="margin-left:auto" title="Scan a tag / QR code">📷 Scan</button></div>
   <div id="sres"></div>`;
   const run=()=>{
     ST.q=$('#gq').value;$('#gqClear').classList.toggle('hidden',!ST.q);
@@ -764,6 +839,7 @@ function renderSearch(m){
     if(hit)openAsset(hit.id);
   });
   $('#gqClear').onclick=()=>{$('#gq').value='';run();$('#gq').focus()};
+  $('#gqScan').onclick=()=>openScanner();
   m.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{ST.scope=b.dataset.scope;renderSearch(m);$('#gq').focus()});
   bindListEvents($('#sres'));
   if(!document.body.classList.contains('is-mobile'))$('#gq').focus();
@@ -960,6 +1036,27 @@ function bulkBar(){
   };
 }
 
+/* ---------------- dashboard charts ---------------- */
+function svgDonut(data,opts={}){
+  const size=opts.size||128,stroke=opts.stroke||17,r=(size-stroke)/2,c=2*Math.PI*r;
+  const total=data.reduce((s,d)=>s+d.n,0)||1;
+  let offset=0;
+  const rings=data.filter(d=>d.n>0).map(d=>{
+    const frac=d.n/total,len=frac*c;
+    const seg=`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${d.color}" stroke-width="${stroke}"
+      stroke-dasharray="${len.toFixed(1)} ${(c-len).toFixed(1)}" stroke-dashoffset="${(-offset).toFixed(1)}"
+      transform="rotate(-90 ${size/2} ${size/2})"><title>${esc(d.label)}: ${d.n}</title></circle>`;
+    offset+=len;return seg;
+  }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:none">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--un-bg)" stroke-width="${stroke}"/>${rings}</svg>`;
+}
+function divCompletion(){
+  const byDiv={};
+  ST.depts.forEach(d=>{const s=deptStats(d.deptId);const b=byDiv[d.div]=byDiv[d.div]||{t:0,r:0};b.t+=s.t;b.r+=s.r});
+  return Object.entries(byDiv).map(([div,s])=>({div,pct:s.t?Math.round(100*s.r/s.t):0,...s}))
+    .sort((a,b)=>b.pct-a.pct||a.div.localeCompare(b.div));
+}
 /* ---------------- dashboard ---------------- */
 function renderStats(m){
   const ALL=[...ST.assets.values()],A=ALL.filter(a=>a.lc!=='D'),D=ALL.filter(a=>a.lc==='D');
@@ -988,8 +1085,14 @@ function renderStats(m){
     <div class="kpi"><div class="v" style="font-size:19px;color:var(--ok)">${fmt$(vv)}</div><div class="l">Verified value</div></div>
     <div class="kpi"><div class="v" style="font-size:19px;color:var(--bad)">${fmt$(nfv)}</div><div class="l">Not-found value (${nf.length})</div></div>
   </div>
-  <div class="card"><b style="font-size:14.5px">Status breakdown</b>
-    ${breakdown.map(b=>`<div class="hbar"><span class="lb">${b.s}</span><span class="tr"><i style="width:${total?100*b.n/total:0}%;background:${colors[b.s]}"></i></span><span class="n">${b.n.toLocaleString()}</span></div>`).join('')}</div>
+  <div class="card" style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+    ${svgDonut(breakdown.map(b=>({label:b.s,n:b.n,color:colors[b.s]})))}
+    <div style="flex:1;min-width:220px"><b style="font-size:14.5px">Status breakdown</b>
+    ${breakdown.map(b=>`<div class="hbar"><span class="lb">${b.s}</span><span class="tr"><i style="width:${total?100*b.n/total:0}%;background:${colors[b.s]}"></i></span><span class="n">${b.n.toLocaleString()}</span></div>`).join('')}</div></div>
+  <div class="div-h">Completion by division</div>
+  <div class="card">${divCompletion().map(d=>`<div class="hbar"><span class="lb" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(d.div)}">${esc(d.div)||'—'}</span>
+    <span class="tr"><i style="width:${d.pct}%;background:${d.pct===100?'linear-gradient(90deg,#3BA34F,var(--ok))':'linear-gradient(90deg,var(--gold-hi),var(--gold))'}"></i></span>
+    <span class="n" style="width:112px">${d.r}/${d.t} · ${d.pct}%</span></div>`).join('')||'<div class="muted" style="font-size:13px">No departments loaded.</div>'}</div>
   <div class="div-h">Disposals &amp; surveys</div>
   <div class="kpis">
     <div class="kpi" id="kDisp" style="cursor:pointer"><div class="v">${D.length.toLocaleString()}</div><div class="l">Disposed assets</div></div>
@@ -1003,15 +1106,15 @@ function renderStats(m){
       <button class="chip" id="qTags">🏷 ${tagEdits.length} edited tags</button>
       <button class="chip" id="qNf">⚠️ ${nf.length} not found</button></div></div>
   <div class="card"><b style="font-size:14.5px">Recently updated</b>
-    ${recent.length?recent.map(a=>`<div class="imp-row" style="cursor:pointer" data-open="${esc(a.id)}"><span class="mono">${esc(a.tag)}</span>
-      <span>${pill(a.status)} <span class="muted" style="font-size:12px">${esc(a.updatedBy)} · ${esc(a.updatedAt)}</span></span></div>`).join(''):'<div class="muted" style="margin-top:8px;font-size:13px">No field updates yet.</div>'}</div>`;
+    <div id="statsRecent">${recent.length?recent.map(a=>`<div class="imp-row" style="cursor:pointer" data-open="${esc(a.id)}"><span class="mono">${esc(a.tag)}</span>
+      <span>${pill(a.status)} <span class="muted" style="font-size:12px">${esc(a.updatedBy)} · ${esc(a.updatedAt)}</span></span></div>`).join(''):'<div class="muted" style="margin-top:8px;font-size:13px">No field updates yet.</div>'}</div></div>`;
   const goAssets=f=>{ST.flt={q:'',status:'',div:'',dept:'',noloc:false,survey:false,...f.flt};ST.lc=f.lc||'A';location.hash='#/assets';if(ST.route.v==='assets')render()};
   $('#kDisp').onclick=()=>goAssets({lc:'D'});
   $('#kASrv').onclick=()=>goAssets({lc:'A',flt:{survey:true}});
   $('#qNoloc').onclick=()=>goAssets({lc:'A',flt:{noloc:true}});
   $('#qTags').onclick=()=>{toast(tagEdits.length+' assets have tag edits — included in export')};
   $('#qNf').onclick=()=>goAssets({lc:'A',flt:{status:'Not Found'}});
-  m.addEventListener('click',e=>{const r=e.target.closest('[data-open]');if(r)openAsset(r.dataset.open)});
+  $('#statsRecent').addEventListener('click',e=>{const r=e.target.closest('[data-open]');if(r)openAsset(r.dataset.open)});
 }
 /* ---------------- autofill suggestions ---------------- */
 function buildSuggIndex(field,deptId){
@@ -1081,6 +1184,9 @@ function openAsset(id){
       ${EDITABLE.map(([k,l])=>`<div class="field"><label>${l}</label>${k==='desc'||k==='notes'
         ?`<textarea data-f="${k}" rows="${k==='notes'?3:2}">${esc(a[k])}</textarea>`
         :`<input data-f="${k}" value="${esc(a[k])}" ${k==='tag'||k==='serial'?'class="mono"':''} autocomplete="off">`}</div>`).join('')}
+      <div class="field"><label>Photo <span class="muted" style="text-transform:none;font-weight:500;letter-spacing:0">— kept on this device only, not synced to SharePoint</span></label>
+        <div id="photoBox"><div class="muted" style="font-size:12.5px">Loading…</div></div>
+        <input type="file" id="photoFile" accept="image/*" capture="environment" class="hidden"></div>
       ${surveyBlock(a)}`}
       <div class="muted" style="font-size:13px;margin:14px 0 7px">Record details</div>
       <div class="ro-grid">
@@ -1110,6 +1216,7 @@ function openAsset(id){
   $('#pcancel').onclick=closePanel;
   attachSuggest(p.querySelector('[data-f="location"]'),'location',a.dept);
   attachSuggest(p.querySelector('[data-f="custodian"]'),'custodian',a.dept);
+  wirePhotoBox(a);
   p.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{st=b.dataset.st;
     p.querySelectorAll('[data-st]').forEach(x=>x.classList.toggle('on',x.dataset.st===st));
     $('#pst').innerHTML=pill(st)});
@@ -1123,6 +1230,32 @@ function openAsset(id){
     toast('Saved '+a.tag+' — '+changes.length+' change'+(changes.length===1?'':'s'));
     closePanel();render();
   };
+}
+function wirePhotoBox(a){
+  const box=$('#photoBox');
+  const paint=async()=>{
+    const url=await phGet(a.id);
+    if(url){
+      box.innerHTML=`<img src="${url}" style="max-width:100%;max-height:220px;border-radius:10px;border:1px solid var(--line);display:block;margin-bottom:8px;object-fit:cover">
+        <div style="display:flex;gap:8px"><button type="button" class="btn btn-sm" id="phReplace">Replace</button><button type="button" class="btn btn-sm btn-danger" id="phRemove">Remove</button></div>`;
+      $('#phReplace').onclick=()=>$('#photoFile').click();
+      $('#phRemove').onclick=async()=>{
+        if(await confirmDlg('Remove photo','Delete this photo from the device? This cannot be undone.','Remove',true)){
+          await phDel(a.id);ST.photoIds.delete(a.id);toast('Photo removed');paint();
+        }};
+    }else{
+      box.innerHTML=`<button type="button" class="btn btn-sm" id="phAdd">📷 Add photo</button>`;
+      $('#phAdd').onclick=()=>$('#photoFile').click();
+    }
+  };
+  $('#photoFile').onchange=async e=>{
+    const f=e.target.files[0];e.target.value='';if(!f)return;
+    box.innerHTML='<span class="spin"></span> Saving photo…';
+    try{const dataUrl=await downscaleImage(f);await phPut(a.id,dataUrl);ST.photoIds.add(a.id);toast('Photo saved (this device only)')}
+    catch(err){toast('Could not save photo: '+(err.message||err),1)}
+    paint();
+  };
+  paint();
 }
 function closePanel(){$('#pveil')?.remove();$('#panel')?.remove()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePanel()}});
@@ -1422,8 +1555,15 @@ function renderExport(m){
   $('#exXlsx').onclick=()=>{const rows=exportRows($('#exScope').value);
     const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Assets');
     XLSX.writeFile(wb,fname()+'.xlsx');toast(rows.length.toLocaleString()+' rows exported')};
-  $('#exBak').onclick=()=>{dl(new Blob([JSON.stringify({assets:[...ST.assets.values()],depts:ST.depts,exported:nowStr()})],
-    {type:'application/json'}),'beach-assets-backup-'+nowStr().replace(/[: ]/g,'-')+'.json');toast('Backup downloaded')};
+  $('#exBak').onclick=async()=>{
+    const btn=$('#exBak');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Preparing…';
+    const photoKeys=await phAllKeys();const photos={};
+    for(const id of photoKeys){const url=await phGet(id);if(url)photos[id]=url}
+    dl(new Blob([JSON.stringify({assets:[...ST.assets.values()],depts:ST.depts,photos,exported:nowStr()})],
+      {type:'application/json'}),'beach-assets-backup-'+nowStr().replace(/[: ]/g,'-')+'.json');
+    btn.disabled=false;btn.textContent='Backup everything (JSON)';
+    toast('Backup downloaded'+(photoKeys.length?` (incl. ${photoKeys.length} photo${photoKeys.length===1?'':'s'})`:''));
+  };
 }
 
 /* ---------------- users ---------------- */
@@ -1479,9 +1619,13 @@ function renderSettings(m){
   <div class="card"><b style="font-size:15px">Data</b>
     <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px">
       <button class="btn" id="dataPull">Pull latest from SharePoint</button>
+      <button class="btn btn-danger" id="dataNuke">🗑 Nuke &amp; rebuild data</button>
       <button class="btn btn-danger" id="dataReset">Reset this device</button></div>
-    <div class="muted" style="font-size:12.5px;margin-top:9px">Reset wipes local data and reloads seed files — unsynced changes are lost.</div></div>
-  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 3.0 “Shoreline”</div>`;
+    <div class="muted" style="font-size:12.5px;margin-top:9px">
+      <b>Nuke &amp; rebuild</b> wipes local asset/department records and the pending sync queue, then reloads fresh from the bundled seed exports (and re-pulls SharePoint right after, if sync is configured) — keeps your sign-in and sync settings. Use this when local data looks stale or corrupted.<br>
+      <b>Reset this device</b> is the full factory reset — also erases sign-in and sync settings.
+    </div></div>
+  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 3.1 “Shoreline”</div>`;
   m.querySelectorAll('[data-th]').forEach(b=>b.onclick=async()=>{ST.theme=b.dataset.th;document.documentElement.dataset.theme=ST.theme;await kvSet('theme',ST.theme);renderSettings(m)});
   $('#cfSave').onclick=async()=>{ST.cfg={getUrl:$('#cgU').value.trim(),postUrl:$('#cpU').value.trim(),key:$('#ckY').value.trim()};
     await kvSet('cfg',ST.cfg);syncChip();toast('Sync settings saved')};
@@ -1497,6 +1641,7 @@ function renderSettings(m){
       catch(e){toast('Invalid config code',1)}}};
   $('#dataPull').onclick=async()=>{if(!ST.cfg.getUrl){toast('Set the Read flow URL first',1);return}
     ST.busy=true;syncChip();try{await pullData();toast('Pulled latest data')}catch(e){toast('Pull failed: '+e.message,1)}finally{ST.busy=false;syncChip()}};
+  $('#dataNuke').onclick=()=>promptNuke();
   $('#dataReset').onclick=async()=>{
     if(await confirmDlg('Reset this device','All local data, pending changes, and sign-in info on this device will be erased and seed data reloaded. SharePoint is not touched.','Erase and reload',true)){
       idb.close();indexedDB.deleteDatabase('beachprop');setTimeout(()=>location.reload(),150)}};
@@ -1506,10 +1651,112 @@ function renderMore(m){
     TOOLS.map(([v,l,ic])=>`<div class="card dept-row" data-nav="${v}"><span class="tool-ic">${ic}</span><div class="nm">${l}</div><div class="right muted">›</div></div>`).join('');
 }
 
+/* ---------------- command palette ---------------- */
+const CMDS=()=>[
+  {label:'Search',hint:'Asset lookup home screen',action:()=>location.hash='#/search'},
+  {label:'Physical Inventory',hint:'Departments grouped by division, with progress',action:()=>location.hash='#/depts'},
+  {label:'All Assets',hint:'Sortable table of every asset',action:()=>location.hash='#/assets'},
+  {label:'Dashboard',hint:'Stats, charts, data quality',action:()=>location.hash='#/stats'},
+  {label:'Import data',hint:'Upload PeopleSoft, PMO, or disposal files',action:()=>location.hash='#/import'},
+  {label:'Export',hint:'Download CSV / Excel / full backup',action:()=>location.hash='#/export'},
+  {label:'Users',hint:'Manage sign-ins',action:()=>location.hash='#/users'},
+  {label:'Settings',hint:'Sync, appearance, data',action:()=>location.hash='#/settings'},
+  {label:'Sync now',hint:'Push pending changes & pull latest',action:()=>syncNow()},
+  {label:'Scan a tag / QR code',hint:'Camera lookup',action:()=>openScanner()},
+  {label:'Toggle theme',hint:ST.theme==='light'?'Switch to dark':'Switch to light',action:async()=>{ST.theme=ST.theme==='light'?'dark':'light';document.documentElement.dataset.theme=ST.theme;await kvSet('theme',ST.theme);if(ST.route.v==='settings')render()}},
+  {label:'Nuke & rebuild data',hint:'Wipe local data on this device and reseed fresh',danger:true,action:()=>promptNuke()},
+];
+let cpEl=null;
+function closeCmdPalette(){cpEl?.remove();cpEl=null}
+function openCmdPalette(){
+  if(cpEl)return;
+  const v=document.createElement('div');v.className='modal-veil';v.style.alignItems='flex-start';v.style.paddingTop='min(14vh,110px)';
+  v.innerHTML=`<div class="modal cp-modal" style="max-width:560px;padding:0;overflow:visible">
+    <div style="padding:6px 14px;border-bottom:1px solid var(--line)"><input id="cpQ" placeholder="Jump to a page, run a command, or search an asset tag…" autocomplete="off" style="border:none;box-shadow:none;padding:10px 2px;font-size:16px"></div>
+    <div id="cpList" style="max-height:min(56vh,420px);overflow-y:auto;padding:8px"></div>
+    <div style="padding:8px 16px;border-top:1px solid var(--line);font-size:11.5px" class="muted">↑↓ navigate · ↵ select · Esc close</div></div>`;
+  v.addEventListener('mousedown',e=>{if(e.target===v)closeCmdPalette()});
+  document.body.append(v);cpEl=v;
+  const input=v.querySelector('#cpQ'),list=v.querySelector('#cpList');
+  let items=[],sel=0;
+  const run=item=>{closeCmdPalette();item.action()};
+  const paint=()=>{
+    const q=input.value.trim().toLowerCase();
+    const matches=CMDS().filter(c=>!q||c.label.toLowerCase().includes(q)||c.hint.toLowerCase().includes(q));
+    let assetHits=[];
+    if(q.length>=2)assetHits=searchAssets(q,'all').slice(0,6).map(a=>({label:(a.tag||a.id)+' — '+a.desc,hint:(a.lc==='D'?'Disposed':a.status)+' · '+(a.deptName||deptLabel(a.dept)),action:()=>openAsset(a.id)}));
+    items=[...assetHits,...matches];
+    sel=Math.min(sel,Math.max(0,items.length-1));
+    list.innerHTML=items.length?items.map((c,i)=>`<button type="button" data-i="${i}" class="cp-item" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;${i===sel?'background:var(--accent-soft)':''}">
+      <span style="font-weight:650;font-size:14px;${c.danger?'color:var(--bad)':''}">${esc(c.label)}</span><span class="muted" style="font-size:12px">${esc(c.hint)}</span></button>`).join('')
+      :'<div class="muted" style="padding:14px;font-size:13px;text-align:center">No matches</div>';
+  };
+  input.addEventListener('input',()=>{sel=0;paint()});
+  input.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(items.length-1,sel+1);paint()}
+    else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(0,sel-1);paint()}
+    else if(e.key==='Enter'){e.preventDefault();if(items[sel])run(items[sel])}
+    else if(e.key==='Escape'){closeCmdPalette()}
+  });
+  list.addEventListener('mousedown',e=>{const b=e.target.closest('[data-i]');if(b)run(items[+b.dataset.i])});
+  paint();setTimeout(()=>input.focus(),10);
+}
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&(e.key==='k'||e.key==='K')){
+    if(!$('#app')||!$('#app').classList.contains('on'))return;
+    e.preventDefault();cpEl?closeCmdPalette():openCmdPalette();
+  }
+});
+
+/* ---------------- barcode / QR scanner ---------------- */
+let scanStream=null,scanRAF=null;
+function stopScanner(){
+  if(scanRAF)cancelAnimationFrame(scanRAF);scanRAF=null;
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null}
+}
+async function openScanner(){
+  if(!('BarcodeDetector'in window)){
+    toast('Camera scanning needs a Chromium browser (Chrome/Edge on Android or desktop) — try manual search instead',1);
+    return;
+  }
+  const v=modal(`<h3>Scan a tag or QR code</h3>
+    <div class="scan-wrap"><video id="scanVid" playsinline muted autoplay></video><div class="scan-frame"></div></div>
+    <div class="muted" style="font-size:12.5px;margin-top:10px">Point the camera at a barcode/QR code on the property tag. Closes automatically on a match.</div>
+    <div class="acts"><button class="btn" data-x>Cancel</button></div>`);
+  v.querySelector('[data-x]').onclick=()=>{stopScanner();v.remove()};
+  v.addEventListener('click',e=>{if(e.target===v)stopScanner()});
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const video=v.querySelector('#scanVid');video.srcObject=scanStream;
+    const detector=new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13','ean_8','upc_a','upc_e']});
+    const tick=async()=>{
+      if(!scanStream)return;
+      try{
+        const codes=await detector.detect(video);
+        if(codes.length){
+          const val=codes[0].rawValue.trim();
+          stopScanner();v.remove();
+          const res=searchAssets(val,'all');
+          const exact=res.filter(a=>a.tag.toLowerCase()===val.toLowerCase()||a.id===val.replace(/^0+/,''));
+          const hit=exact[0]||res[0];
+          if(hit){openAsset(hit.id)}
+          else{ST.q=val;location.hash='#/search';toast('Scanned "'+val+'" — no exact match, showing search')}
+          return;
+        }
+      }catch(e){}
+      scanRAF=requestAnimationFrame(tick);
+    };
+    scanRAF=requestAnimationFrame(tick);
+  }catch(e){
+    toast('Camera unavailable: '+(e.message||e),1);v.remove();
+  }
+}
+
 /* ---------------- init ---------------- */
 $('#lgGo').onclick=doLogin;
 $('#lgP').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 $('#logoutBtn').onclick=logout;
+$('#cmdBtn').onclick=()=>openCmdPalette();
 $('#syncChip').onclick=()=>syncNow();
 window.addEventListener('online',()=>{if(ST.pending&&ST.cfg.postUrl)syncNow(true)});
 if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
