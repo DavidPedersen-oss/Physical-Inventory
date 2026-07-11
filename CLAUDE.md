@@ -66,6 +66,13 @@ Every `render*` function fully replaces its container's `innerHTML` and rebinds 
 - New destructive/local-only actions should go in Settings → Data, alongside "Nuke & rebuild data" and "Reset this device" — and should be exposed as a command-palette entry too (see `CMDS()`).
 - Colors/spacing/radii are CSS custom properties (`--gold`, `--ink`, `--radius`, etc.) defined per-theme in `:root`/`[data-theme="light"]`/`[data-theme="dark"]` — never hardcode a hex color in new markup; use the existing variables so dark mode stays correct.
 
+## Notable subsystems (build 4.0 "Horizon")
+
+- **Design system**: Modern-SaaS restyle ("Horizon", replacing "Shoreline") — Inter + JetBrains Mono via Google Fonts, 12px radii, layered `--shadow-*` tokens, `--spring`/`--ease` motion curves, staggered `fadeUp` entrance animations (`main.page-in`, list `nth-child` delays), hover-lift on `.card`/`.srow`/`.dept-row`. All pre-existing class names were kept; only the `<style>` block's look changed.
+- **Auctions tab** (`renderAuctions`): view over `ST.surveyGroups` filtered to groups with an item whose `act` matches /auction/i (`isAuctionItem`/`auctionGroups`). Own filter state `ST.aflt`. Nav is now sectioned (`NAV_SECTIONS`): Assets / Field work / Disposals / Tools.
+- **Ask AI (DeepSeek)** (`renderAsk`, `askDeepSeek`): optional; needs `ST.cfg.dsKey` (Settings → AI assistant, saved in kv `cfg`, device-local). OpenAI-compatible function calling against `https://api.deepseek.com/chat/completions` with two local tools (`query_surveys`, `query_assets` in `runAiTool`) that run over `ST` and return counts + ≤5 samples — the raw dataset is never sent. Chat state in `ST.ai` (in-memory only). sw.js never caches deepseek.com.
+- **Loading quips** (`QUIPS`/`quip()`/`loadingHTML()`): playful randomized loading messages used by nuke, imports, survey-history loads, and the AI thinking bubble.
+
 ## Notable subsystems (added on `feature/easier-setup-and-tools`)
 
 - **Nuke & rebuild data** (`nukeAndReseed()` / `promptNuke()`): wipes local `assets`+`queue` stores and re-fetches `seed/*.json` fresh, then re-pulls SharePoint if configured. Deliberately *lighter* than "Reset this device" (which also wipes session/config/theme) — it's for "my local data looks wrong" without losing sign-in/sync setup. Local-only by design; does not touch SharePoint. Photos are untouched (they key off asset ID, which is stable across a reseed).
