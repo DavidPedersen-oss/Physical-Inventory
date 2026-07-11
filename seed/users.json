@@ -6,5 +6,13 @@
   "salt": "8708526841af314e7f4ccb772ec3dd45",
   "hash": "6e02c4212d237023b84d9b74a4a1ab3b90d73f8d055f094701df12b4d771ff7c",
   "active": "Yes"
+ },
+ {
+  "username": "admin",
+  "display": "Admin",
+  "role": "admin",
+  "salt": "13a3852bb170272356fd00facb7e101c",
+  "hash": "38a53b21c327e716b7f2608d47561fe06db129a07a968a67c785871ff0ae3dc8",
+  "active": "Yes"
  }
 ]
