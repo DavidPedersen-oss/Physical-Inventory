@@ -18,9 +18,11 @@ Branding follows the CSULB brand guidance: white-first open layout, the yellow/b
 | `seed/surveys_archive.json` | 97,372 **historical** survey line items (archive tabs, back to the 1980s) — lazy-loaded only when you open Survey history, so it never slows the initial load |
 | `seed/users.json` | Bundled starter login (david) |
 | `seed/departments.json` | 151 departments with Div/Org grouping + tracker completion |
+| `sharepoint-import/Create-SharePointLists.ps1` | One script that creates all 5 lists **and** imports the CSVs (PnP PowerShell) |
 | `sharepoint-import/Assets.csv` | Ready to import into the SharePoint **Assets** list |
 | `sharepoint-import/Departments.csv` | Ready to import into **Departments** |
-| `sharepoint-import/Users.csv` | Column template for **Users** |
+| `sharepoint-import/Users.csv` | Column template for **Users** (contains david's row) |
+| `sharepoint-import/AuditUpdates.csv`, `ImportHistory.csv` | Column templates for the two log lists (one sample row — delete it after import) |
 
 **Pre-loaded state:** 78 departments marked complete in the FY25-26 tracker → their **783 assets are seeded as "Verified OK"** with `UpdatedBy = Tracker Import`, so they're distinguishable from field verifications. 5 departments have no name in the tracker (710, 727, 741, 796, 823) and appear under UNASSIGNED — fix them in the Departments list anytime.
 
@@ -42,6 +44,30 @@ The app is fully usable at this point (search, audit, import, export) — sync j
 
 ## 2 · Create the SharePoint lists (once)
 
+Three ways to do this, fastest first. Whichever you pick, the column layout in **Option C** is the contract the flows depend on.
+
+### Option A — run the script (2 minutes, does everything)
+
+`sharepoint-import/Create-SharePointLists.ps1` creates all five lists with the exact internal column names and types, renames the Title labels, and bulk-imports `Assets.csv`, `Departments.csv`, and `Users.csv`. In PowerShell 7:
+
+```powershell
+Install-Module PnP.PowerShell -Scope CurrentUser   # first time only
+cd sharepoint-import
+./Create-SharePointLists.ps1 -SiteUrl "https://csulb.sharepoint.com/sites/<your-site>" -ClientId "<app id>"
+```
+
+PnP sign-in needs an Entra ID app registration (a one-time `Register-PnPEntraIDAppForInteractiveLogin` if your account may register apps — details in the script header). If CSULB blocks app registrations, use Option B; the script is safe to re-run, skips lists/columns that already exist, and won't re-import into a list that has data.
+
+### Option B — import the CSVs in the browser (no PowerShell, ~10 minutes)
+
+In your SharePoint site, for each of the five files in `sharepoint-import/`: **New → List → From CSV** and name the list exactly `Assets`, `Departments`, `Users`, `AuditUpdates`, `ImportHistory`. The headers have no spaces, so the internal column names come out right automatically. Then verify three things per list:
+
+1. The **first CSV column landed as the list's Title column** (click it → *Column settings* — the flows filter on `Title`). If SharePoint created it as a separate column instead, delete the list and use Option C for that one.
+2. **Column types**: `SumAmount`, `SortOrder`, and the three `Rows*` columns should be **Number**; everything else **Single line of text** except `Description`, `Notes`, `EditHistory`, `OldValue`, `NewValue`, `Summary` which should be **Multiple lines of text**. SharePoint sometimes guesses Date for `AcqDate`/`InServiceDt`/`Timestamp` — set those back to text.
+3. Delete the `SAMPLE-DELETE-ME` row from **AuditUpdates** and **ImportHistory**.
+
+### Option C — build by hand (the reference layout)
+
 In your CSULB SharePoint site: **New → List**. Column names must match **exactly** and be created **without spaces** (SharePoint freezes the *internal* name at creation — `TagNumber`, never `Tag Number`). Use **Single line of text** for everything except where noted; set EditHistory/Notes/Summary to **Multiple lines of text (plain text)**.
 
 **Assets** — rename the default *Title* column's label to "AssetID" if you like (internal name stays `Title`, which is what the flow uses):
@@ -62,7 +88,7 @@ EditHistory (multi)
 
 **ImportHistory**: `Title (= timestamp)`, `User`, `Filename`, `RowsMatched (Number)`, `RowsAdded (Number)`, `RowsConflicted (Number)`, `Summary (multi)`
 
-**Load the data:** easiest path is *New → List → From CSV* using `sharepoint-import/Assets.csv` and `Departments.csv` (check column types after), or create the lists first and use *Edit in grid view* → paste. 3,674 rows pastes fine in grid view in a few chunks.
+**Load the data (Option C only):** with the lists created, use *Edit in grid view* → paste from the CSVs. 3,674 rows pastes fine in grid view in a few chunks. (Options A and B already loaded the data.)
 
 ---
 
@@ -72,7 +98,59 @@ Both use the premium **"When an HTTP request is received"** trigger (you confirm
 
 > **CORS rule (important):** every **Response** action in both flows must include a header `Access-Control-Allow-Origin` = `*`. The app sends its POST as `text/plain` specifically so browsers skip the preflight that Power Automate can't answer. Don't change that contract.
 
-### Flow 1 — `BeachProperty-GetData` (read)
+### Option A — build it with Copilot (fastest, ~5 minutes for both flows)
+
+Power Automate's **Create → Create with Copilot** box takes a plain-English description and drafts the whole flow — triggers, actions, and mappings — for you to review. Paste one of these two prompts per flow (swap in your real site URL and shared key first), then check the **verify checklist** below before saving. This is a fast starting point, not a guarantee — Copilot sometimes needs a nudge on the trickier steps (CORS header, pagination, the exact JSON response shape), which is why Option B below spells out the exact reference configuration if you need to fix anything by hand.
+
+**Prompt for Flow 1 (`BeachProperty-GetData`):**
+```
+Create a flow named "BeachProperty-GetData" that starts with the "When an HTTP request is received" trigger, method GET, no request body schema.
+
+Add a Condition: check whether the trigger's query parameter "k" equals the text "YOUR_SHARED_KEY_HERE".
+
+If false: respond with an HTTP Response action, status code 401, header Access-Control-Allow-Origin set to *, and JSON body {"ok": false, "error": "bad key"}.
+
+If true:
+1. Get items from the SharePoint site "https://YOUR-TENANT.sharepoint.com/sites/YOUR-SITE" list "Assets", with pagination turned on and a threshold of 5000 items.
+2. Use a Select data operation on the value of that Get items, mapping: id from Title, tag from TagNumber, dept from Dept, deptName from DeptName, div from DivArea, desc from Description, serial from SerialID, location from Location, custodian from Custodian, category from Category, acqDate from AcqDate, inServiceDt from InServiceDt, po from PONo, value from SumAmount, status from Status, notes from Notes, updatedBy from UpdatedBy, updatedAt from LastUpdated, history from EditHistory.
+3. Get items from the "Departments" list, then Select mapping: deptId from Title, name from DeptName, div from DivArea, sortOrder from SortOrder, completed from Completed.
+4. Get items from the "Users" list, then Select mapping: username from Title, display from DisplayName, role from Role, salt from Salt, hash from PasswordHash, active from Active.
+5. Respond with an HTTP Response action, status 200, headers Access-Control-Allow-Origin: * and Content-Type: application/json, and a JSON body with three properties: "ok" set to true, "assets" set to the output of the first Select, "departments" set to the output of the second Select, "users" set to the output of the third Select.
+```
+
+**Prompt for Flow 2 (`BeachProperty-Update`):**
+```
+Create a flow named "BeachProperty-Update" that starts with the "When an HTTP request is received" trigger, method POST, no request body schema.
+
+Add a Parse JSON data operation whose content is the expression json(string(triggerBody())), with this sample schema: {"key":"x","user":"x","assetUpserts":[{"id":"1","tag":"","dept":"","deptName":"","div":"","desc":"","serial":"","location":"","custodian":"","category":"","acqDate":"","inServiceDt":"","po":"","value":0,"status":"","notes":"","updatedBy":"","updatedAt":"","history":""}],"auditLog":[{"AssetID":"","Field":"","OldValue":"","NewValue":"","Status":"","Timestamp":"","User":""}],"importLog":[{"Timestamp":"","User":"","Filename":"","RowsMatched":0,"RowsAdded":0,"RowsConflicted":0,"Summary":""}]}
+
+Add a Condition: check whether the Parse JSON output "key" equals the text "YOUR_SHARED_KEY_HERE".
+
+If false: respond with an HTTP Response action, status code 401, header Access-Control-Allow-Origin set to *, and JSON body {"ok": false, "error": "bad key"}.
+
+If true:
+1. Apply to each item in Parse JSON's "assetUpserts" array:
+   a. Get items from the SharePoint "Assets" list filtered by Title equal to the current item's "id", top count 1.
+   b. Condition: if that Get items returned more than 0 results, Update the matching item (look up its ID from the Get items result) in "Assets"; otherwise Create a new item in "Assets". Either way map: Title from id, TagNumber from tag, Dept from dept, DeptName from deptName, DivArea from div, Description from desc, SerialID from serial, Location from location, Custodian from custodian, Category from category, AcqDate from acqDate, InServiceDt from inServiceDt, PONo from po, SumAmount from value, Status from status, Notes from notes, UpdatedBy from updatedBy, LastUpdated from updatedAt, EditHistory from history.
+2. Apply to each item in "auditLog": create an item in the "AuditUpdates" list mapping Title from AssetID, Field, OldValue, NewValue, Status, Timestamp, User one to one.
+3. Apply to each item in "importLog": create an item in the "ImportHistory" list mapping Title from Timestamp, User, Filename, RowsMatched, RowsAdded, RowsConflicted, Summary one to one.
+4. Respond with an HTTP Response action, status 200, header Access-Control-Allow-Origin: *, JSON body {"ok": true, "processed": the length of the assetUpserts array}.
+
+Turn on concurrency control (degree 10) on the assetUpserts Apply to each so bulk pushes finish faster.
+```
+
+**Verify checklist after Copilot builds each flow** (these are the parts it's most likely to miss or simplify):
+- [ ] Every **Response** action has the header `Access-Control-Allow-Origin: *` — Copilot sometimes drops this or only adds it to one branch.
+- [ ] The Assets **Get items** in Flow 1 has **Pagination ON, threshold 5000** (Settings ⋯ menu) — otherwise you silently get only 100 rows.
+- [ ] Flow 2's **Parse JSON** content is exactly the expression `json(string(triggerBody()))`, not the raw trigger body.
+- [ ] The Flow 2 filter query on **Get items** is `Title eq '@{items('Apply_to_each')?['id']}'` (single quotes around the dynamic value).
+- [ ] The Response bodies match the JSON shapes above exactly (`ok`/`assets`/`departments`/`users` for Flow 1, `ok`/`processed` for Flow 2) — the app's `pullData()`/`syncNow()` parse these by name.
+
+If Copilot's draft drifts from any of these, open the action and fix it manually using Option B's field-by-field reference — it's the same flow, just written out step by step.
+
+### Option B — build it by hand (exact reference)
+
+#### Flow 1 — `BeachProperty-GetData` (read)
 
 1. **Trigger:** When an HTTP request is received → Method: **GET**. Leave schema empty.
 2. **Condition:** expression `triggerOutputs()?['queries']?['k']` **is equal to** your shared key.
@@ -119,7 +197,7 @@ Both use the premium **"When an HTTP request is received"** trigger (you confirm
       (Insert the three Select outputs as dynamic content; action names may differ.)
 4. Save, copy the **HTTP GET URL** → this is the app's **Read flow URL**.
 
-### Flow 2 — `BeachProperty-Update` (write)
+#### Flow 2 — `BeachProperty-Update` (write)
 
 1. **Trigger:** When an HTTP request is received → Method: **POST**, schema empty.
 2. **Parse JSON** (Data Operations) — Content expression: `json(string(triggerBody()))` *(the app posts JSON as text/plain; this parses it either way)*. Schema → *Generate from sample*:
