@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -234,6 +235,17 @@ main{flex:1;overflow-y:auto;min-width:0;padding:22px 26px 96px;-webkit-overflow-
 .srv-card{border-left:3px solid var(--gold);background:var(--surface2);border-radius:0 10px 10px 0;
   padding:10px 13px;margin:7px 0;font-size:12.5px;line-height:1.5}
 
+/* ============ Surveys ============ */
+.srow{cursor:pointer;display:block}
+.srow:hover{border-color:var(--ink)}
+.srow-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.srow-desc{font-size:13.5px;color:var(--ink);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scat{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:3px 8px;border-radius:6px;color:#fff;background:var(--ink2)}
+.scat-CI{background:#2563eb}.scat-CNI{background:#0891b2}.scat-TR{background:#7c3aed}.scat-FDN{background:#b45309}.scat-BK{background:#0f766e}.scat-NEW{background:#be123c}
+.spill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--surface2);border:1px solid var(--line2);color:var(--ink2)}
+.spill.open{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-fill)}
+.spill.arc{opacity:.7}
+
 /* ============ Departments ============ */
 .div-h{display:flex;align-items:center;gap:10px;margin:22px 0 10px;font-family:var(--mono);font-weight:700;
   font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
@@ -466,7 +478,8 @@ function confirmDlg(title,body,okLabel,danger){return new Promise(res=>{
 const ST={assets:new Map(),depts:[],deptMap:{},users:[],session:null,sel:new Set(),
   cfg:{getUrl:'',postUrl:'',key:''},route:{v:'search'},theme:'light',pending:0,lastSync:'',syncLog:[],
   q:'',scope:'all',deptView:{},sort:{k:'tag',dir:1},flt:{q:'',status:'',div:'',dept:'',noloc:false,survey:false},busy:false,lc:'A',
-  photoIds:new Set()};
+  photoIds:new Set(),
+  surveys:[],archiveLoaded:false,sflt:{q:'',cat:'',st:'',linked:false,arc:false},surveyByAsset:new Map(),surveyGroups:new Map()};
 const lcPass=a=>ST.lc==='ALL'||(ST.lc==='D'?a.lc==='D':a.lc!=='D');
 function lcSeg(){return `<span class="lc-seg">${[['A','Active'],['ALL','All'],['D','Disposed']].map(([k,l])=>`<button data-lc="${k}" class="${ST.lc===k?'on':''}">${l}</button>`).join('')}</span>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-lc]');if(b){ST.lc=b.dataset.lc;ST.sel.clear();render()}});
@@ -540,6 +553,7 @@ async function boot(){
     catch(e){console.warn('users seed load failed',e)}
   }
   ST.depts.forEach(d=>ST.deptMap[d.deptId]=d);
+  await loadSurveys();
   ST.pending=(await qAll()).filter(o=>!o.done).length;
   ST.photoIds=new Set(await phAllKeys());
   if(!window.crypto||!crypto.subtle){
@@ -656,6 +670,10 @@ async function pullData(){
     ST.users=j.users.map(u=>({username:u.username,display:u.display||u.username,role:u.role||'auditor',salt:u.salt,hash:u.hash,active:u.active??'Yes'})).concat(locals);
     await kvSet('users',ST.users);
   }
+  if(Array.isArray(j.surveys)){
+    const keep=ST.archiveLoaded?ST.surveys.filter(s=>s.ar):[];
+    ST.surveys=j.surveys.concat(keep);buildSurveyIndex();
+  }
   await logSync({ok:true,msg:`Pulled ${merged} assets from SharePoint`});
   if(typeof render==='function')render();
 }
@@ -704,9 +722,10 @@ more:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="curren
 imp:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 21h16"/></svg>',
 exp:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V10m0 0 4 4m-4-4-4 4M4 3h16"/></svg>',
 usr:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c1.4-3.8 4.6-4.8 7.5-4.8s6.1 1 7.5 4.8"/></svg>',
-cog:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.8M12 18.7v2.8M2.5 12h2.8M18.7 12h2.8M5.3 5.3l2 2M16.7 16.7l2 2M18.7 5.3l-2 2M7.3 16.7l-2 2"/></svg>'};
-const NAV=[['search','Search',I.search],['depts','Physical Inventory',I.pi],['assets','All Assets',I.grid],['stats','Dashboard',I.stats]];
-const NAV_M=[['search','Search',I.search],['depts','Inventory',I.pi],['assets','Assets',I.grid],['stats','Dashboard',I.stats]];
+cog:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.8M12 18.7v2.8M2.5 12h2.8M18.7 12h2.8M5.3 5.3l2 2M16.7 16.7l2 2M18.7 5.3l-2 2M7.3 16.7l-2 2"/></svg>',
+srv:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/><path d="m9 13 2 2 4-4"/></svg>'};
+const NAV=[['search','Search',I.search],['depts','Physical Inventory',I.pi],['assets','All Assets',I.grid],['surveys','Surveys',I.srv],['stats','Dashboard',I.stats]];
+const NAV_M=[['search','Search',I.search],['depts','Inventory',I.pi],['assets','Assets',I.grid],['surveys','Surveys',I.srv],['stats','Stats',I.stats]];
 const TOOLS=[['import','Import data',I.imp],['export','Export',I.exp],['users','Users',I.usr],['settings','Settings',I.cog]];
 function buildNav(){
   $('#sideNav').innerHTML=NAV.map(([v,l,ic])=>`<button class="nav-it" data-nav="${v}">${ic}${l}</button>`).join('')
@@ -716,7 +735,7 @@ function buildNav(){
   document.addEventListener('click',e=>{const b=e.target.closest('[data-nav]');if(b)location.hash='#/'+b.dataset.nav});
 }
 function parseRoute(){const h=location.hash.replace(/^#\/?/,'')||'search';const[v,p]=h.split('/');return{v,p:p?decodeURIComponent(p):null}}
-window.addEventListener('hashchange',()=>{ST.route=parseRoute();ST.sel.clear();render()});
+window.addEventListener('hashchange',()=>{if(typeof closePanel==='function')closePanel();ST.route=parseRoute();ST.sel.clear();render()});
 function enterApp(){
   $('#login').style.display='none';$('#app').classList.add('on');
   $('#whoami').textContent=ST.session.name+(ST.session.role==='admin'?' · admin':'');
@@ -787,6 +806,8 @@ function render(){
   else if(v==='export')renderExport(m);
   else if(v==='users')renderUsers(m);
   else if(v==='settings')renderSettings(m);
+  else if(v==='surveys')renderSurveys(m);
+  else if(v==='survey')renderSurvey(m,ST.route.p);
   else if(v==='more')renderMore(m);
   else renderSearch(m);
   bulkBar();
@@ -1159,6 +1180,14 @@ function attachSuggest(input,field,deptId){
 /* ---------------- asset detail panel ---------------- */
 const EDITABLE=[['tag','Property tag'],['location','Location'],['custodian','Custodian'],['serial','Serial ID'],['desc','Description'],['notes','Auditor notes']];
 function surveyBlock(a){
+  const list=(ST.surveyByAsset&&ST.surveyByAsset.get(a.id))||[];
+  if(list.length){
+    const byNew=list.slice().sort((x,y)=>String(y.dc||y.da||'').localeCompare(String(x.dc||x.da||'')));
+    return `<div class="muted" style="font-size:13px;margin:14px 0 4px">⚑ Survey history (${list.length}) — tap a record for the full survey</div>`+
+      byNew.map(s=>`<div class="srv-card" data-skey="${esc(survKey(s))}" style="cursor:pointer">
+        <b>${esc(s.no)||'—'}</b> · ${esc(SURVCATSHORT[s.cat]||s.cat)}${s.ar?' · <span class="muted">history</span>':''}${(s.dc||s.da)?' · '+esc(s.dc||s.da):''}${s.st==='Open'?' · <b style="color:var(--accent)">Open</b>':''}<br>
+        ${esc(s.d||'')}${s.act?` — <b>${esc(s.act)}</b>`:''}${s.cond?` · ${esc(s.cond)}`:''}${s.nt?`<br><span class="muted">${esc(s.nt)}</span>`:''}</div>`).join('');
+  }
   if(!a.survey||!a.survey.length)return'';
   return `<div class="muted" style="font-size:13px;margin:14px 0 4px">⚑ Survey records on file (matched by asset ID / tag / serial)</div>`+
     a.survey.map(s=>`<div class="srv-card"><b>${esc(s.no)||'—'}</b> · ${esc(s.sh)}${s.dt?' · '+esc(s.dt):''}<br>
@@ -1336,6 +1365,154 @@ function diffImport(incoming){
   }
   return{news,updates,conflicts,unchanged};
 }
+/* ---------------- surveys (asset directory: survey history) ---------------- */
+const SURVCAT={NEW:'New Survey App',BK:'Bookstore E-Waste',CI:'Campus Inventory',CNI:'Campus Non-Inventory',TR:'Transfer',FDN:'Foundation'};
+const SURVCATSHORT={NEW:'New',BK:'Bookstore',CI:'Inventory',CNI:'Non-Inv',TR:'Transfer',FDN:'Foundation'};
+function survKey(s){return [s.cat,s.no||'(no #)',s.fy||''].join('')}
+function survDeptId(s){return s.dp||s.fd||''}
+function survDeptName(s){return s.dn||s.fdn||(s.td?('→ '+(s.tdn||s.td)):'')||''}
+const _digits=x=>String(x==null?'':x).replace(/\D/g,'').replace(/^0+/,'');
+const _alnum=x=>String(x==null?'':x).toUpperCase().replace(/[^A-Z0-9]/g,'');
+const _idn=x=>{x=String(x==null?'':x).trim();return x.replace(/^0+/,'')||x};
+function buildSurveyIndex(){
+  const byId=new Map(),byTag=new Map(),bySer=new Map();
+  for(const a of ST.assets.values()){
+    const i=_idn(a.id);if(i&&!byId.has(i))byId.set(i,a.id);
+    const t=_digits(a.tag);if(t.length>=3&&!byTag.has(t))byTag.set(t,a.id);
+    const se=_alnum(a.serial);if(se.length>=5&&!bySer.has(se))bySer.set(se,a.id);
+  }
+  ST.surveyByAsset=new Map();ST.surveyGroups=new Map();
+  for(const s of ST.surveys){
+    let m='',mt='';
+    const i=_idn(s.aid);if(i&&byId.has(i)){m=byId.get(i);mt='id'}
+    if(!m){const t=_digits(s.tag);if(t.length>=3&&byTag.has(t)){m=byTag.get(t);mt='tag'}}
+    if(!m){const se=_alnum(s.ser);if(se.length>=5&&bySer.has(se)){m=bySer.get(se);mt='serial'}}
+    s.m=m||undefined;s.mt=mt||undefined;
+    if(!s.st)s.st=(!s.ar&&!s.dc)?'Open':'Done';
+    if(m){let arr=ST.surveyByAsset.get(m);if(!arr){arr=[];ST.surveyByAsset.set(m,arr)}arr.push(s)}
+    const k=survKey(s);let g=ST.surveyGroups.get(k);
+    if(!g){g={key:k,cat:s.cat,no:s.no||'',fy:s.fy||'',ar:s.ar,items:[]};ST.surveyGroups.set(k,g)}
+    g.items.push(s);
+  }
+}
+async function loadSurveys(){
+  try{ST.surveys=await fetch('seed/surveys.json').then(r=>r.json());ST.archiveLoaded=false;buildSurveyIndex()}
+  catch(e){console.warn('survey seed load failed',e);ST.surveys=[];buildSurveyIndex()}
+}
+async function loadArchiveSurveys(){
+  if(ST.archiveLoaded)return;
+  const arc=await fetch('seed/surveys_archive.json').then(r=>r.json());
+  ST.surveys=ST.surveys.concat(arc);ST.archiveLoaded=true;buildSurveyIndex();
+}
+document.addEventListener('click',e=>{
+  const sk=e.target.closest('[data-skey]');if(sk){location.hash='#/survey/'+encodeURIComponent(sk.dataset.skey);return}
+  const oa=e.target.closest('[data-openasset]');if(oa){openAsset(oa.dataset.openasset);return}
+});
+function surveyMeta(g){
+  if(g._meta)return g._meta;
+  let date='',dept='',desc='',linked=0,open=false;const acts=new Set();
+  for(const s of g.items){
+    const d=s.dc||s.da||'';if(d>date)date=d;
+    if(!dept)dept=survDeptName(s)||deptLabel(survDeptId(s));
+    if(!desc)desc=s.d||'';
+    if(s.m)linked++;
+    if(s.st==='Open')open=true;
+    if(s.act)acts.add(s.act);
+  }
+  return g._meta={date,dept,desc,linked,open,acts:[...acts]};
+}
+function surveyRow(g){
+  const mt=surveyMeta(g);
+  return `<div class="card srow" data-skey="${esc(g.key)}">
+    <div class="srow-top"><span class="scat scat-${g.cat}">${SURVCATSHORT[g.cat]}</span>
+      <b>${esc(g.no)||'<span class="muted">no #</span>'}</b>
+      ${mt.open?'<span class="spill open">Open</span>':'<span class="spill">Completed</span>'}
+      ${g.ar?'<span class="spill arc">history</span>':''}
+      ${mt.linked?`<span class="srv-badge">⚑ ${mt.linked}</span>`:''}</div>
+    <div class="kv"><span>${esc(mt.dept)||'—'}</span>${mt.date?`<span class="mono">${esc(mt.date)}</span>`:''}<span>${g.items.length} item${g.items.length===1?'':'s'}</span>${mt.acts.length?`<span>${esc(mt.acts.join(', '))}</span>`:''}</div>
+    <div class="srow-desc">${esc(mt.desc)}</div></div>`;
+}
+function renderSurveys(m){
+  const f=ST.sflt;
+  const rows=[];
+  for(const g of ST.surveyGroups.values()){
+    if(!f.arc&&g.ar)continue;
+    if(f.cat&&g.cat!==f.cat)continue;
+    const mt=surveyMeta(g);
+    if(f.linked&&!mt.linked)continue;
+    if(f.st==='Open'&&!mt.open)continue;
+    if(f.st==='Done'&&mt.open)continue;
+    rows.push(g);
+  }
+  const q=f.q.trim().toLowerCase();
+  let list=rows;
+  if(q){const toks=q.split(/\s+/);list=rows.filter(g=>{const mt=surveyMeta(g);
+    const hay=(g.no+' '+mt.dept+' '+mt.desc+' '+mt.acts.join(' ')+' '+(SURVCAT[g.cat]||'')).toLowerCase();
+    return toks.every(t=>hay.includes(t))})}
+  list.sort((a,b)=>surveyMeta(b).date.localeCompare(surveyMeta(a).date));
+  const max=60;
+  const catChips=[['','All']].concat(Object.keys(SURVCAT).map(c=>[c,SURVCATSHORT[c]]));
+  const nArc=ST.surveys.filter(s=>s.ar).length;
+  m.innerHTML=`<div class="page-h"><h2>Surveys</h2><span class="cnt">${ST.surveyGroups.size.toLocaleString()} surveys · ${ST.surveys.length.toLocaleString()} line items</span></div>
+  <div class="search-wrap"><span class="s-ico">${I.search}</span>
+    <input id="sq" type="search" placeholder="Survey #, department, description, action…" value="${esc(f.q)}" autocomplete="off">
+    <button class="s-clear ${f.q?'':'hidden'}" id="sqClear">✕</button></div>
+  <div class="chip-row">${catChips.map(([c,l])=>`<button class="chip ${f.cat===c?'on':''}" data-scat="${c}">${l}</button>`).join('')}</div>
+  <div class="chip-row">
+    <button class="chip ${f.st==='Open'?'on':''}" data-sst="Open">Open</button>
+    <button class="chip ${f.st==='Done'?'on':''}" data-sst="Done">Completed</button>
+    <button class="chip ${f.linked?'on':''}" id="sLink">⚑ Linked to asset</button>
+    <button class="chip ${f.arc?'on':''}" id="sArc">Include history (${ST.archiveLoaded?nArc.toLocaleString():'97k'})</button>
+  </div>
+  <div class="muted" style="font-size:13px;margin-bottom:9px">${list.length.toLocaleString()} survey${list.length===1?'':'s'}${list.length>max?' · showing first '+max:''}</div>
+  <div id="slist">${list.slice(0,max).map(surveyRow).join('')||'<div class="note">No surveys match these filters.</div>'}</div>`;
+  const run=()=>{ST.sflt.q=$('#sq').value;renderSurveys(m)};
+  $('#sq').addEventListener('input',debounce(run,200));
+  $('#sqClear').onclick=()=>{ST.sflt.q='';renderSurveys(m)};
+  m.querySelectorAll('[data-scat]').forEach(b=>b.onclick=()=>{ST.sflt.cat=b.dataset.scat;renderSurveys(m)});
+  m.querySelectorAll('[data-sst]').forEach(b=>b.onclick=()=>{ST.sflt.st=ST.sflt.st===b.dataset.sst?'':b.dataset.sst;renderSurveys(m)});
+  $('#sLink').onclick=()=>{ST.sflt.linked=!ST.sflt.linked;renderSurveys(m)};
+  $('#sArc').onclick=async()=>{
+    if(!ST.sflt.arc&&!ST.archiveLoaded){toast('Loading survey history…');try{await loadArchiveSurveys()}catch(e){toast('History load failed',1);return}}
+    ST.sflt.arc=!ST.sflt.arc;renderSurveys(m)};
+}
+function renderSurvey(m,keyEnc){
+  const key=keyEnc||'';
+  let g=ST.surveyGroups.get(key);
+  if(!g&&!ST.archiveLoaded){
+    m.innerHTML=`<div class="page-h"><h2>Survey</h2></div><div class="note">Loading survey history…</div>`;
+    loadArchiveSurveys().then(()=>render()).catch(()=>{m.innerHTML='<div class="note">Could not load this survey.</div>'});return;
+  }
+  if(!g){m.innerHTML=`<div class="page-h"><h2>Survey</h2></div><div class="note">Survey not found. <a href="#/surveys">Back to surveys</a></div>`;return}
+  const mt=surveyMeta(g),first=g.items[0],isTr=g.cat==='TR';
+  const items=g.items.map(s=>{
+    const a=s.m?ST.assets.get(s.m):null;
+    const chips=[s.aid?`ID ${esc(s.aid)}`:'',s.tag?`Tag ${esc(s.tag)}`:'',s.ser?`SN ${esc(s.ser)}`:''].filter(Boolean).map(c=>`<span class="tagchip" style="font-size:11px">${c}</span>`).join(' ');
+    return `<div class="srv-card">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${chips}${a?`<button class="btn btn-sm btn-gold" data-openasset="${esc(s.m)}">View asset ›</button>`:'<span class="muted" style="font-size:11px">no asset match</span>'}</div>
+      <div style="margin-top:5px">${esc(s.d||'')}</div>
+      <div class="kv">${s.act?`<b>${esc(s.act)}</b>`:''}${s.cond?`<span>${esc(s.cond)}</span>`:''}${s.amt?`<span class="mono">$${esc(s.amt)}</span>`:''}${s.yr?`<span>${esc(s.yr)}</span>`:''}</div>
+      ${s.nt?`<div class="muted" style="font-size:12px;margin-top:3px">${esc(s.nt)}</div>`:''}</div>`;
+  }).join('');
+  m.innerHTML=`<div class="page-h"><a href="#/surveys" class="btn btn-sm">‹ Surveys</a>
+    <h2 style="margin-left:6px">Survey ${esc(g.no)||'(no #)'}</h2>
+    <span class="scat scat-${g.cat}">${SURVCAT[g.cat]||g.cat}</span>
+    ${mt.open?'<span class="spill open">Open</span>':'<span class="spill">Completed</span>'}${g.ar?'<span class="spill arc">history</span>':''}</div>
+  <div class="ro-grid" style="margin-bottom:14px">
+    ${isTr?`<div><div class="lab">From</div>${esc(first.fdn||'')} <span class="muted mono">${esc(first.fd||'')}</span></div>
+      <div><div class="lab">To</div>${esc(first.tdn||'')} <span class="muted mono">${esc(first.td||'')}</span></div>`
+     :`<div><div class="lab">Department</div>${esc(mt.dept)||'—'}</div>`}
+    <div><div class="lab">Date assigned</div><span class="mono">${esc(first.da)||'—'}</span></div>
+    <div><div class="lab">Date completed</div><span class="mono">${esc(first.dc)||'—'}</span></div>
+    <div><div class="lab">Logged by</div>${esc(first.lb)||'—'}</div>
+    <div><div class="lab">Closed by</div>${esc(first.cb)||'—'}</div>
+    <div><div class="lab">Fiscal year</div>${esc(first.fy)||'—'}</div>
+    <div><div class="lab">Linked assets</div>${mt.linked} of ${g.items.length}</div>
+  </div>
+  <div class="muted" style="font-size:13px;margin:6px 0 7px">${g.items.length} line item${g.items.length===1?'':'s'}</div>
+  ${items}`;
+}
+
 function renderImport(m){
   m.innerHTML=`<div class="page-h"><h2>Import asset data</h2></div>
   <div class="note">Accepts, with automatic format detection:<br>
