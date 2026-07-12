@@ -1,0 +1,7 @@
+{
+  "_readme": "Copy this file to seed/config.json and fill in the values. Every device that opens the app will pick these up automatically on first load (existing device settings are never overwritten). WARNING: anyone who can view this repository or the deployed site can read seed/config.json — only commit it if you accept that. The safer alternative is Settings > Copy setup link.",
+  "getUrl": "",
+  "postUrl": "",
+  "key": "",
+  "dsKey": ""
+}

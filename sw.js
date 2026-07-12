@@ -1,5 +1,5 @@
 /* Beach Property service worker — cache-first app shell for offline field use */
-const CACHE = 'beachprop-v5';
+const CACHE = 'beachprop-v6';
 const SHELL = [
   './', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png',
   'seed/assets.json', 'seed/departments.json', 'seed/disposed.json', 'seed/users.json', 'seed/surveys.json',

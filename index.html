@@ -554,7 +554,7 @@ const ST={assets:new Map(),depts:[],deptMap:{},users:[],session:null,sel:new Set
   cfg:{getUrl:'',postUrl:'',key:'',dsKey:''},route:{v:'search'},theme:'light',pending:0,lastSync:'',syncLog:[],
   q:'',scope:'all',deptView:{},sort:{k:'tag',dir:1},flt:{q:'',status:'',div:'',dept:'',noloc:false,survey:false},busy:false,lc:'A',
   photoIds:new Set(),
-  surveys:[],archiveLoaded:false,sflt:{q:'',cat:'',st:'',linked:false,arc:false},surveyByAsset:new Map(),surveyGroups:new Map(),
+  surveys:[],archiveLoaded:false,sflt:{q:'',cat:'',st:'',act:'',sort:'new',linked:false,arc:false},surveyByAsset:new Map(),surveyGroups:new Map(),svChkMode:false,
   aflt:{q:'',st:'',arc:false},ai:{msgs:[],view:[],busy:false}};
 const lcPass=a=>ST.lc==='ALL'||(ST.lc==='D'?a.lc==='D':a.lc!=='D');
 function lcSeg(){return `<span class="lc-seg">${[['A','Active'],['ALL','All'],['D','Disposed']].map(([k,l])=>`<button data-lc="${k}" class="${ST.lc===k?'on':''}">${l}</button>`).join('')}</span>`}
@@ -603,6 +603,25 @@ async function boot(){
   ST.theme=await kvGet('theme')|| (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
   document.documentElement.dataset.theme=ST.theme;
   ST.cfg=Object.assign(ST.cfg,await kvGet('cfg')||{});
+  // one-time setup link (#setup=BASE64) — apply shared sync/AI settings, then clean the hash
+  if(location.hash.startsWith('#setup=')){
+    try{
+      const inc=JSON.parse(atob(decodeURIComponent(location.hash.slice(7))));
+      for(const k of ['getUrl','postUrl','key','dsKey'])if(String(inc[k]||'').length)ST.cfg[k]=String(inc[k]);
+      await kvSet('cfg',ST.cfg);
+      history.replaceState(null,'',location.pathname+location.search);
+      toast('Shared settings applied — this device is set up');
+    }catch(e){console.warn('bad setup link',e)}
+  }
+  // optional repo-committed seed/config.json — fills in any blank settings so
+  // new devices sync out of the box (see the example file in seed/)
+  try{
+    const fc=await fetch('seed/config.json').then(r=>r.ok?r.json():null).catch(()=>null);
+    if(fc){let ch=false;
+      for(const k of ['getUrl','postUrl','key','dsKey'])if(!ST.cfg[k]&&String(fc[k]||'').length){ST.cfg[k]=String(fc[k]);ch=true}
+      if(ch){await kvSet('cfg',ST.cfg);toast('Sync settings loaded from the deployed config')}
+    }
+  }catch(e){}
   ST.users=await kvGet('users')||[];
   ST.lastSync=await kvGet('lastSync')||'';
   ST.syncLog=await kvGet('syncLog')||[];
@@ -629,6 +648,7 @@ async function boot(){
     catch(e){console.warn('users seed load failed',e)}
   }
   ST.depts.forEach(d=>ST.deptMap[d.deptId]=d);
+  SURV_EDITS=await kvGet('survEdits')||{};
   await loadSurveys();
   ST.pending=(await qAll()).filter(o=>!o.done).length;
   ST.photoIds=new Set(await phAllKeys());
@@ -1458,13 +1478,35 @@ function diffImport(incoming){
 /* ---------------- surveys (asset directory: survey history) ---------------- */
 const SURVCAT={NEW:'New Survey App',BK:'Bookstore E-Waste',CI:'Campus Inventory',CNI:'Campus Non-Inventory',TR:'Transfer',FDN:'Foundation'};
 const SURVCATSHORT={NEW:'New',BK:'Bookstore',CI:'Inventory',CNI:'Non-Inv',TR:'Transfer',FDN:'Foundation'};
+/* disposal-action buckets — the raw data spells actions many ways (EWASTE/E-WASTE, REYCLE, REUTILAZATION…) */
+const ACT_BUCKETS=[['ewaste','E-Waste',/e-?waste/i],['recycle','Recycle',/recycl|reycle/i],['auction','Auction',/auction/i],
+ ['donation','Donation',/donat/i],['transfer','Transfer',/transfer/i],['reuse','Reutilization',/re-?ut/i],
+ ['lost','Lost/Stolen',/lost|missing|stolen/i],['cancel','Cancelled',/cancel/i]];
+const actBucket=a=>{const t=String(a||'');if(!t)return'';for(const[k,,re]of ACT_BUCKETS)if(re.test(t))return k;return'other'};
 function survKey(s){return [s.cat,s.no||'(no #)',s.fy||''].join('')}
 function survDeptId(s){return s.dp||s.fd||''}
 function survDeptName(s){return s.dn||s.fdn||(s.td?('→ '+(s.tdn||s.td)):'')||''}
 const _digits=x=>String(x==null?'':x).replace(/\D/g,'').replace(/^0+/,'');
 const _alnum=x=>String(x==null?'':x).toUpperCase().replace(/[^A-Z0-9]/g,'');
 const _idn=x=>{x=String(x==null?'':x).trim();return x.replace(/^0+/,'')||x};
+/* check-in edits: per-line-item overrides + checked-in flag, keyed by the item's
+   unique k, stored in kv 'survEdits' (device-local — survives Nuke & rebuild) */
+let SURV_EDITS={};
+function applySurvEdits(){
+  for(const s of ST.surveys){
+    const o=SURV_EDITS[s.k];if(!o)continue;
+    s.chk=o.ok?1:0;
+    if(o.d!=null)s.d=o.d;if(o.ser!=null)s.ser=o.ser;if(o.nt!=null)s.nt=o.nt;
+  }
+}
+async function saveSurvEdit(s,patch){
+  const o=SURV_EDITS[s.k]={...SURV_EDITS[s.k],...patch,by:ST.session?ST.session.name:'?',at:nowStr()};
+  s.chk=o.ok?1:0;
+  if(o.d!=null)s.d=o.d;if(o.ser!=null)s.ser=o.ser;if(o.nt!=null)s.nt=o.nt;
+  await kvSet('survEdits',SURV_EDITS);
+}
 function buildSurveyIndex(){
+  applySurvEdits();
   const byId=new Map(),byTag=new Map(),bySer=new Map();
   for(const a of ST.assets.values()){
     const i=_idn(a.id);if(i&&!byId.has(i))byId.set(i,a.id);
@@ -1500,25 +1542,27 @@ document.addEventListener('click',e=>{
 });
 function surveyMeta(g){
   if(g._meta)return g._meta;
-  let date='',dept='',desc='',linked=0,open=false;const acts=new Set();
+  let date='',dept='',desc='',linked=0,open=false;const acts=new Set(),bks=new Set();
   for(const s of g.items){
     const d=s.dc||s.da||'';if(d>date)date=d;
     if(!dept)dept=survDeptName(s)||deptLabel(survDeptId(s));
     if(!desc)desc=s.d||'';
     if(s.m)linked++;
     if(s.st==='Open')open=true;
-    if(s.act)acts.add(s.act);
+    if(s.act){acts.add(s.act);const b=actBucket(s.act);if(b)bks.add(b)}
   }
-  return g._meta={date,dept,desc,linked,open,acts:[...acts]};
+  return g._meta={date,dept,desc,linked,open,acts:[...acts],bks};
 }
 function surveyRow(g){
   const mt=surveyMeta(g);
+  const nChk=g.items.reduce((n,s)=>n+(s.chk?1:0),0);
   return `<div class="card srow" data-skey="${esc(g.key)}">
     <div class="srow-top"><span class="scat scat-${g.cat}">${SURVCATSHORT[g.cat]}</span>
       <b>${esc(g.no)||'<span class="muted">no #</span>'}</b>
       ${mt.open?'<span class="spill open">Open</span>':'<span class="spill">Completed</span>'}
       ${g.ar?'<span class="spill arc">history</span>':''}
-      ${mt.linked?`<span class="srv-badge">⚑ ${mt.linked}</span>`:''}</div>
+      ${mt.linked?`<span class="srv-badge">⚑ ${mt.linked}</span>`:''}
+      ${nChk?`<span class="spill" style="background:var(--ok-bg);color:var(--ok);border-color:transparent">✓ ${nChk}/${g.items.length}</span>`:''}</div>
     <div class="kv"><span>${esc(mt.dept)||'—'}</span>${mt.date?`<span class="mono">${esc(mt.date)}</span>`:''}<span>${g.items.length} item${g.items.length===1?'':'s'}</span>${mt.acts.length?`<span>${esc(mt.acts.join(', '))}</span>`:''}</div>
     <div class="srow-desc">${esc(mt.desc)}</div></div>`;
 }
@@ -1529,6 +1573,7 @@ function renderSurveys(m){
     if(!f.arc&&g.ar)continue;
     if(f.cat&&g.cat!==f.cat)continue;
     const mt=surveyMeta(g);
+    if(f.act&&!mt.bks.has(f.act))continue;
     if(f.linked&&!mt.linked)continue;
     if(f.st==='Open'&&!mt.open)continue;
     if(f.st==='Done'&&mt.open)continue;
@@ -1539,7 +1584,12 @@ function renderSurveys(m){
   if(q){const toks=q.split(/\s+/);list=rows.filter(g=>{const mt=surveyMeta(g);
     const hay=(g.no+' '+mt.dept+' '+mt.desc+' '+mt.acts.join(' ')+' '+(SURVCAT[g.cat]||'')).toLowerCase();
     return toks.every(t=>hay.includes(t))})}
-  list.sort((a,b)=>surveyMeta(b).date.localeCompare(surveyMeta(a).date));
+  const sorters={
+    new:(a,b)=>surveyMeta(b).date.localeCompare(surveyMeta(a).date),
+    old:(a,b)=>surveyMeta(a).date.localeCompare(surveyMeta(b).date),
+    no:(a,b)=>String(b.no).localeCompare(String(a.no),undefined,{numeric:true}),
+    items:(a,b)=>b.items.length-a.items.length};
+  list.sort(sorters[f.sort]||sorters.new);
   const max=60;
   const catChips=[['','All']].concat(Object.keys(SURVCAT).map(c=>[c,SURVCATSHORT[c]]));
   const nArc=ST.surveys.filter(s=>s.ar).length;
@@ -1548,11 +1598,21 @@ function renderSurveys(m){
     <input id="sq" type="search" placeholder="Survey #, department, description, action…" value="${esc(f.q)}" autocomplete="off">
     <button class="s-clear ${f.q?'':'hidden'}" id="sqClear">✕</button></div>
   <div class="chip-row">${catChips.map(([c,l])=>`<button class="chip ${f.cat===c?'on':''}" data-scat="${c}">${l}</button>`).join('')}</div>
-  <div class="chip-row">
+  <div class="chip-row" style="align-items:center">
+    <span class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Type</span>
+    ${ACT_BUCKETS.map(([k,l])=>`<button class="chip ${f.act===k?'on':''}" data-sact="${k}">${l}</button>`).join('')}
+  </div>
+  <div class="chip-row" style="align-items:center">
     <button class="chip ${f.st==='Open'?'on':''}" data-sst="Open">Open</button>
     <button class="chip ${f.st==='Done'?'on':''}" data-sst="Done">Completed</button>
     <button class="chip ${f.linked?'on':''}" id="sLink">⚑ Linked to asset</button>
     <button class="chip ${f.arc?'on':''}" id="sArc">Include history (${ST.archiveLoaded?nArc.toLocaleString():'97k'})</button>
+    <select id="sSort" style="width:auto;margin-left:auto;font-size:13px;padding:7px 11px;min-height:36px;border-radius:99px">
+      <option value="new" ${f.sort==='new'?'selected':''}>Newest first</option>
+      <option value="old" ${f.sort==='old'?'selected':''}>Oldest first</option>
+      <option value="no" ${f.sort==='no'?'selected':''}>Survey #</option>
+      <option value="items" ${f.sort==='items'?'selected':''}>Most items</option>
+    </select>
   </div>
   <div class="muted" style="font-size:13px;margin-bottom:9px">${list.length.toLocaleString()} survey${list.length===1?'':'s'}${list.length>max?' · showing first '+max:''}</div>
   <div id="slist">${list.slice(0,max).map(surveyRow).join('')||'<div class="note">No surveys match these filters.</div>'}</div>`;
@@ -1560,7 +1620,9 @@ function renderSurveys(m){
   $('#sq').addEventListener('input',debounce(run,200));
   $('#sqClear').onclick=()=>{ST.sflt.q='';renderSurveys(m)};
   m.querySelectorAll('[data-scat]').forEach(b=>b.onclick=()=>{ST.sflt.cat=b.dataset.scat;renderSurveys(m)});
+  m.querySelectorAll('[data-sact]').forEach(b=>b.onclick=()=>{ST.sflt.act=ST.sflt.act===b.dataset.sact?'':b.dataset.sact;renderSurveys(m)});
   m.querySelectorAll('[data-sst]').forEach(b=>b.onclick=()=>{ST.sflt.st=ST.sflt.st===b.dataset.sst?'':b.dataset.sst;renderSurveys(m)});
+  $('#sSort').onchange=()=>{ST.sflt.sort=$('#sSort').value;renderSurveys(m)};
   $('#sLink').onclick=()=>{ST.sflt.linked=!ST.sflt.linked;renderSurveys(m)};
   $('#sArc').onclick=async()=>{
     if(!ST.sflt.arc&&!ST.archiveLoaded){toast(quip());try{await loadArchiveSurveys()}catch(e){toast('History load failed',1);return}}
@@ -1575,19 +1637,34 @@ function renderSurvey(m,keyEnc){
   }
   if(!g){m.innerHTML=`<div class="page-h"><h2>Survey</h2></div><div class="note">Survey not found. <a href="#/surveys">Back to surveys</a></div>`;return}
   const mt=surveyMeta(g),first=g.items[0],isTr=g.cat==='TR';
-  const items=g.items.map(s=>{
+  const nChk=g.items.reduce((n,s)=>n+(s.chk?1:0),0),chkPct=g.items.length?Math.round(100*nChk/g.items.length):0;
+  const items=g.items.map((s,i)=>{
     const a=s.m?ST.assets.get(s.m):null;
+    const ed=SURV_EDITS[s.k];
     const chips=[s.aid?`ID ${esc(s.aid)}`:'',s.tag?`Tag ${esc(s.tag)}`:'',s.ser?`SN ${esc(s.ser)}`:''].filter(Boolean).map(c=>`<span class="tagchip" style="font-size:11px">${c}</span>`).join(' ');
-    return `<div class="srv-card">
+    return `<div class="srv-card" ${s.chk?'style="border-left-color:var(--ok)"':''}>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${chips}${a?`<button class="btn btn-sm btn-gold" data-openasset="${esc(s.m)}">View asset ›</button>`:'<span class="muted" style="font-size:11px">no asset match</span>'}</div>
       <div style="margin-top:5px">${esc(s.d||'')}</div>
       <div class="kv">${s.act?`<b>${esc(s.act)}</b>`:''}${s.cond?`<span>${esc(s.cond)}</span>`:''}${s.amt?`<span class="mono">$${esc(s.amt)}</span>`:''}${s.yr?`<span>${esc(s.yr)}</span>`:''}</div>
-      ${s.nt?`<div class="muted" style="font-size:12px;margin-top:3px">${esc(s.nt)}</div>`:''}</div>`;
+      ${s.nt?`<div class="muted" style="font-size:12px;margin-top:3px">${esc(s.nt)}</div>`:''}
+      ${ST.svChkMode
+        ?`<div style="display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap">
+            <button class="btn btn-sm ${s.chk?'btn-gold':''}" data-chk="${i}">${s.chk?'✓ Checked in':'Check in'}</button>
+            <button class="btn btn-sm" data-edit="${i}">✎ Edit info</button>
+            ${ed?`<span class="muted" style="font-size:11px">${esc(ed.by||'')} · ${esc(ed.at||'')}</span>`:''}</div>`
+        :(s.chk?`<div style="font-size:11.5px;margin-top:6px;color:var(--ok);font-weight:650">✓ Checked in${ed?` — ${esc(ed.by||'')} · ${esc(ed.at||'')}`:''}</div>`:'')}</div>`;
   }).join('');
   m.innerHTML=`<div class="page-h"><a href="#/surveys" class="btn btn-sm">‹ Surveys</a>
     <h2 style="margin-left:6px">Survey ${esc(g.no)||'(no #)'}</h2>
     <span class="scat scat-${g.cat}">${SURVCAT[g.cat]||g.cat}</span>
-    ${mt.open?'<span class="spill open">Open</span>':'<span class="spill">Completed</span>'}${g.ar?'<span class="spill arc">history</span>':''}</div>
+    ${mt.open?'<span class="spill open">Open</span>':'<span class="spill">Completed</span>'}${g.ar?'<span class="spill arc">history</span>':''}
+    <span style="flex:1"></span>
+    <button class="btn btn-sm ${ST.svChkMode?'btn-gold':''}" id="svChk">✓ Check-in mode</button></div>
+  ${(nChk||ST.svChkMode)?`<div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="flex:1;min-width:150px"><b>${nChk} of ${g.items.length}</b> checked in · <b style="color:${chkPct===100?'var(--ok)':'var(--accent)'}">${chkPct}%</b>
+      <div class="meter ${chkPct===100?'full':''}" style="width:100%;max-width:340px;margin-top:7px"><i style="width:${chkPct}%"></i></div></div>
+    ${ST.svChkMode?`<button class="btn btn-sm" id="svChkAll">Check in all remaining</button>`:''}
+    </div>`:''}
   <div class="ro-grid" style="margin-bottom:14px">
     ${isTr?`<div><div class="lab">From</div>${esc(first.fdn||'')} <span class="muted mono">${esc(first.fd||'')}</span></div>
       <div><div class="lab">To</div>${esc(first.tdn||'')} <span class="muted mono">${esc(first.td||'')}</span></div>`
@@ -1599,8 +1676,36 @@ function renderSurvey(m,keyEnc){
     <div><div class="lab">Fiscal year</div>${esc(first.fy)||'—'}</div>
     <div><div class="lab">Linked assets</div>${mt.linked} of ${g.items.length}</div>
   </div>
-  <div class="muted" style="font-size:13px;margin:6px 0 7px">${g.items.length} line item${g.items.length===1?'':'s'}</div>
+  <div class="muted" style="font-size:13px;margin:6px 0 7px">${g.items.length} line item${g.items.length===1?'':'s'}${ST.svChkMode?' · check-ins and edits are saved on this device':''}</div>
   ${items}`;
+  $('#svChk').onclick=()=>{ST.svChkMode=!ST.svChkMode;renderSurvey(m,keyEnc)};
+  m.querySelectorAll('[data-chk]').forEach(b=>b.onclick=async()=>{
+    const s=g.items[+b.dataset.chk];
+    await saveSurvEdit(s,{ok:s.chk?0:1});
+    toast(s.chk?'Checked in ✓':'Check-in cleared');
+    renderSurvey(m,keyEnc)});
+  m.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editSurvItem(g,+b.dataset.edit,m,keyEnc));
+  const ca=$('#svChkAll');
+  if(ca)ca.onclick=async()=>{
+    let n=0;for(const s of g.items)if(!s.chk){await saveSurvEdit(s,{ok:1});n++}
+    toast(n?n+' item'+(n===1?'':'s')+' checked in':'Everything was already checked in');
+    renderSurvey(m,keyEnc)};
+}
+function editSurvItem(g,i,m,keyEnc){
+  const s=g.items[i];
+  const v=modal(`<h3>Edit line item</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:12px">Changes are saved on this device and shown wherever this survey appears. The original import is not modified.</div>
+    <div class="field"><label>Description</label><textarea id="seD" rows="2">${esc(s.d||'')}</textarea></div>
+    <div class="field"><label>Serial</label><input id="seS" class="mono" value="${esc(s.ser||'')}"></div>
+    <div class="field"><label>Notes</label><textarea id="seN" rows="2">${esc(s.nt||'')}</textarea></div>
+    <div class="acts"><button class="btn" data-x>Cancel</button><button class="btn btn-gold" data-ok>Save</button></div>`);
+  v.querySelector('[data-x]').onclick=()=>v.remove();
+  v.querySelector('[data-ok]').onclick=async()=>{
+    await saveSurvEdit(s,{d:v.querySelector('#seD').value.trim(),ser:v.querySelector('#seS').value.trim(),nt:v.querySelector('#seN').value.trim()});
+    buildSurveyIndex(); // serial may now match a different asset
+    v.remove();toast('Line item updated');
+    renderSurvey(m,keyEnc);
+  };
 }
 
 /* ---------------- auctions (surveys with an AUCTION action) ---------------- */
@@ -2037,7 +2142,7 @@ function renderExport(m){
     const btn=$('#exBak');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Preparing…';
     const photoKeys=await phAllKeys();const photos={};
     for(const id of photoKeys){const url=await phGet(id);if(url)photos[id]=url}
-    dl(new Blob([JSON.stringify({assets:[...ST.assets.values()],depts:ST.depts,photos,exported:nowStr()})],
+    dl(new Blob([JSON.stringify({assets:[...ST.assets.values()],depts:ST.depts,photos,survEdits:SURV_EDITS,exported:nowStr()})],
       {type:'application/json'}),'beach-assets-backup-'+nowStr().replace(/[: ]/g,'-')+'.json');
     btn.disabled=false;btn.textContent='Backup everything (JSON)';
     toast('Backup downloaded'+(photoKeys.length?` (incl. ${photoKeys.length} photo${photoKeys.length===1?'':'s'})`:''));
@@ -2089,8 +2194,12 @@ function renderSettings(m){
       <button class="btn" id="cfTest">Test connection</button>
       <button class="btn btn-dark" id="cfSync">Sync now (${ST.pending} pending)</button></div>
     <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:9px">
+      <button class="btn btn-sm btn-gold" id="cfLink">Copy setup link</button>
       <button class="btn btn-sm" id="cfShare">Copy config code</button>
-      <button class="btn btn-sm" id="cfPaste">Paste config code</button></div></div>
+      <button class="btn btn-sm" id="cfPaste">Paste config code</button></div>
+    <div class="muted" style="font-size:12.5px;margin-top:9px">
+      <b>Set up other devices without retyping:</b> tap <b>Copy setup link</b> and open that link on the other device — sync + AI settings apply automatically. Or commit a <span class="mono">seed/config.json</span> (copy <span class="mono">seed/config.example.json</span>) so every new device picks the settings up on first load — note that anyone who can see the repo or site can read that file.
+    </div></div>
   <div class="card"><b style="font-size:15px">AI assistant (DeepSeek)</b>
     <div class="note">Paste a DeepSeek API key (from <span class="mono">platform.deepseek.com</span>) to enable the <b>Ask AI</b> page — natural-language questions about your inventory, e.g. "how many open auction surveys are there for carts?". The key is saved on this device only; the AI receives only question-specific counts and small samples, never the full dataset.</div>
     <div class="field"><label>DeepSeek API key</label><input id="cdsK" type="password" class="mono" value="${esc(ST.cfg.dsKey||'')}" placeholder="sk-…" autocomplete="off"></div>
@@ -2109,7 +2218,7 @@ function renderSettings(m){
       <b>Nuke &amp; rebuild</b> wipes local asset/department records and the pending sync queue, then reloads fresh from the bundled seed exports (and re-pulls SharePoint right after, if sync is configured) — keeps your sign-in and sync settings. Use this when local data looks stale or corrupted.<br>
       <b>Reset this device</b> is the full factory reset — also erases sign-in and sync settings.
     </div></div>
-  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 4.0 “Horizon”</div>`;
+  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 4.1 “Horizon”</div>`;
   m.querySelectorAll('[data-th]').forEach(b=>b.onclick=async()=>{ST.theme=b.dataset.th;document.documentElement.dataset.theme=ST.theme;await kvSet('theme',ST.theme);renderSettings(m)});
   $('#cfSave').onclick=async()=>{ST.cfg={...ST.cfg,getUrl:$('#cgU').value.trim(),postUrl:$('#cpU').value.trim(),key:$('#ckY').value.trim()};
     await kvSet('cfg',ST.cfg);syncChip();toast('Sync settings saved')};
@@ -2117,6 +2226,9 @@ function renderSettings(m){
     await kvSet('cfg',ST.cfg);toast(ST.cfg.dsKey?'DeepSeek key saved — Ask AI is live':'DeepSeek key removed')};
   $('#cfTest').onclick=()=>{ST.cfg.getUrl=$('#cgU').value.trim();ST.cfg.key=$('#ckY').value.trim();testConnection()};
   $('#cfSync').onclick=()=>syncNow();
+  $('#cfLink').onclick=()=>{
+    const u=location.origin+location.pathname+'#setup='+encodeURIComponent(btoa(JSON.stringify(ST.cfg)));
+    navigator.clipboard.writeText(u).then(()=>toast('Setup link copied — open it once on any device'))};
   $('#cfShare').onclick=()=>{navigator.clipboard.writeText(btoa(JSON.stringify(ST.cfg))).then(()=>toast('Config code copied — paste it on another device'))};
   $('#cfPaste').onclick=async()=>{
     const v=modal(`<h3>Paste config code</h3><textarea id="ccIn" rows="4" class="mono" style="font-size:12px"></textarea>
