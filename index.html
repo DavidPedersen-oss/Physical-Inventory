@@ -711,19 +711,31 @@ async function syncNow(silentOk){
   if(ST.busy)return;ST.busy=true;syncChip();
   try{
     const ops=(await qAll()).filter(o=>!o.done);
-    if(ops.length){
-      for(let i=0;i<ops.length;i+=300){
+    // locally-added accounts ride along on the first batch until SharePoint confirms them
+    const localUsers=ST.users.filter(u=>u.local).map(u=>({username:u.username,display:u.display||u.username,
+      role:u.role||'auditor',salt:u.salt,hash:u.hash,active:u.active??'Yes'}));
+    if(ops.length||localUsers.length){
+      for(let i=0;i<Math.max(ops.length,1);i+=300){
         const batch=ops.slice(i,i+300);
         const body={key:ST.cfg.key,user:ST.session?ST.session.name:'?',
           assetUpserts:batch.filter(o=>o.kind==='upsert').map(o=>o.payload),
           auditLog:batch.filter(o=>o.kind==='audit').map(o=>o.payload),
-          importLog:batch.filter(o=>o.kind==='import').map(o=>o.payload)};
+          importLog:batch.filter(o=>o.kind==='import').map(o=>o.payload),
+          userUpserts:i===0?localUsers:[]};
         const r=await fetch(ST.cfg.postUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
         if(!r.ok)throw new Error('Write endpoint returned '+r.status);
         let j={};try{j=await r.json()}catch(e){}
         if(j.ok===false)throw new Error(j.error||'Flow reported failure');
         for(const o of batch){await qDel(o.qid)}
-        await logSync({ok:true,msg:`Pushed ${batch.filter(o=>o.kind==='upsert').length} assets, ${batch.filter(o=>o.kind==='audit').length} audit rows`});
+        if(i===0&&localUsers.length){
+          if(typeof j.usersProcessed==='number'&&j.usersProcessed>0){
+            ST.users.forEach(u=>{if(u.local)delete u.local});await kvSet('users',ST.users);
+            await logSync({ok:true,msg:`Pushed ${localUsers.length} user account(s) to the SharePoint Users list`});
+          }else{
+            await logSync({ok:false,msg:`Write flow ignored ${localUsers.length} pending user account(s) — add the userUpserts step to the update flow (README §3) or paste the row into the Users list by hand`});
+          }
+        }
+        if(batch.length)await logSync({ok:true,msg:`Pushed ${batch.filter(o=>o.kind==='upsert').length} assets, ${batch.filter(o=>o.kind==='audit').length} audit rows`});
       }
     }
     ST.pending=0;
@@ -2152,19 +2164,26 @@ function renderExport(m){
 /* ---------------- users ---------------- */
 function renderUsers(m){
   const admin=ST.session.role==='admin';
+  const nLocal=ST.users.filter(u=>u.local).length;
   m.innerHTML=`<div class="page-h"><h2>Users</h2></div>
-  <div class="note">Sign-in is universal: accounts live in the SharePoint <b>Users</b> list (plus the bundled starter account) and work on any device after it syncs. Passwords are stored only as salted PBKDF2 hashes — never plaintext.</div>
+  <div class="note">Sign-in is universal: accounts live in the SharePoint <b>Users</b> list (plus the bundled starter account) and work on any device after it syncs. New accounts push to SharePoint automatically on the next sync. Passwords are stored only as salted PBKDF2 hashes — never plaintext.</div>
   <div class="card"><table class="plain"><tr><th>Username</th><th>Name</th><th>Role</th><th>Source</th></tr>
     ${ST.users.map(u=>`<tr><td class="mono">${esc(u.username)}</td><td>${esc(u.display)}</td><td>${esc(u.role)}</td>
-      <td class="muted">${u.local?'this device (pending SharePoint row)':'shared'}</td></tr>`).join('')}</table></div>
+      <td class="muted">${u.local?'this device — pushes on next sync':'shared (SharePoint)'}</td></tr>`).join('')}</table>
+    ${nLocal&&ST.cfg.postUrl?`<button class="btn btn-sm btn-gold" id="uSync" style="margin-top:11px">Push ${nLocal} pending account${nLocal===1?'':'s'} to SharePoint now</button>`:''}
+    ${nLocal&&!ST.cfg.postUrl?`<div class="note" style="margin-top:11px">Sync is off on this device — set it up in <b>Settings</b> to share these accounts, or paste the generated row into the Users list by hand.</div>`:''}</div>
   ${admin?`<div class="card"><b style="font-size:15px">Add a user</b>
-    <div class="note">Generates the salted hash. The account works on this device immediately; paste the row into the SharePoint <b>Users</b> list to enable it everywhere.</div>
+    <div class="note">The account works on this device immediately and is pushed to the SharePoint <b>Users</b> list on the next sync. The generated row below is a manual fallback if the write flow hasn't been updated for user sync yet.</div>
     <div class="field"><label>Username</label><input id="nuU" autocapitalize="none"></div>
     <div class="field"><label>Display name</label><input id="nuN"></div>
     <div class="field"><label>Role</label><select id="nuR"><option value="auditor">auditor</option><option value="admin">admin</option></select></div>
     <div class="field"><label>Password</label><input id="nuP" type="text" class="mono"></div>
-    <button class="btn btn-gold" id="nuGo">Generate user row</button>
-    <div id="nuOut"></div></div>`:'<div class="note">Only admins can add users.</div>'}`;
+    <button class="btn btn-gold" id="nuGo">Add user</button>
+    <div id="nuOut"></div></div>`:'<div class="note">Only admins can add users.</div>'}
+  ${admin&&nLocal?`<div class="card"><b style="font-size:15px">Manual rows for pending accounts</b>
+    <div class="note">Only needed if the write flow doesn't handle <span class="mono">userUpserts</span> yet — paste into the SharePoint Users list.</div>
+    ${ST.users.filter(u=>u.local).map(u=>`<div class="code-box" style="margin-top:9px">Title (username): ${esc(u.username)}\nDisplayName: ${esc(u.display)}\nRole: ${esc(u.role)}\nSalt: ${esc(u.salt)}\nPasswordHash: ${esc(u.hash)}\nActive: ${esc(u.active??'Yes')}</div>`).join('')}</div>`:''}`;
+  const uSync=$('#uSync');if(uSync)uSync.onclick=()=>syncNow();
   if(admin)$('#nuGo').onclick=async()=>{
     const un=$('#nuU').value.trim(),nm=$('#nuN').value.trim(),role=$('#nuR').value,pw=$('#nuP').value;
     if(!un||pw.length<8){toast('Username required; password ≥ 8 characters',1);return}
@@ -2172,10 +2191,9 @@ function renderUsers(m){
     ST.users=ST.users.filter(u=>u.username!==un);
     ST.users.push({username:un,display:nm||un,role,salt,hash,active:'Yes',local:true});
     await kvSet('users',ST.users);
-    $('#nuOut').innerHTML=`<div class="note" style="margin-top:14px"><b>Paste into the SharePoint Users list:</b></div>
-      <div class="code-box">Title (username): ${esc(un)}\nDisplayName: ${esc(nm||un)}\nRole: ${esc(role)}\nSalt: ${salt}\nPasswordHash: ${hash}\nActive: Yes</div>
-      <button class="btn btn-sm" style="margin-top:9px" onclick="navigator.clipboard.writeText('${esc(un)}\\t${esc(nm||un)}\\t${esc(role)}\\t${salt}\\t${hash}\\tYes').then(()=>toast('Copied as tab-separated row'))">Copy row</button>`;
-    toast('User added on this device + row generated');
+    if(ST.cfg.postUrl){toast('User added — pushing to SharePoint…');scheduleAutoSync()}
+    else toast('User added on this device — set up sync (or paste the row) to share it');
+    renderUsers(m);
   };
 }
 
@@ -2218,7 +2236,7 @@ function renderSettings(m){
       <b>Nuke &amp; rebuild</b> wipes local asset/department records and the pending sync queue, then reloads fresh from the bundled seed exports (and re-pulls SharePoint right after, if sync is configured) — keeps your sign-in and sync settings. Use this when local data looks stale or corrupted.<br>
       <b>Reset this device</b> is the full factory reset — also erases sign-in and sync settings.
     </div></div>
-  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 4.1 “Horizon”</div>`;
+  <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 4.2 “Horizon”</div>`;
   m.querySelectorAll('[data-th]').forEach(b=>b.onclick=async()=>{ST.theme=b.dataset.th;document.documentElement.dataset.theme=ST.theme;await kvSet('theme',ST.theme);renderSettings(m)});
   $('#cfSave').onclick=async()=>{ST.cfg={...ST.cfg,getUrl:$('#cgU').value.trim(),postUrl:$('#cpU').value.trim(),key:$('#ckY').value.trim()};
     await kvSet('cfg',ST.cfg);syncChip();toast('Sync settings saved')};

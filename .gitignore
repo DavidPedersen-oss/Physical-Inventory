@@ -1,0 +1,4 @@
+# local Claude Code session files — never deploy
+.claude/
+# real deployed sync config (copy of seed/config.example.json) — committing it publishes your flow URLs + key
+seed/config.json

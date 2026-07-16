@@ -4,7 +4,7 @@ An all-encompassing asset directory & reference tool for the Property Management
 
 Branding follows the CSULB brand guidance: white-first open layout, the yellow/black palette with gray body copy, and no protected university marks (the wordmark here is plain text, so nothing needs clearance from Strategic Communications).
 
-**Sign in:** the bundled starter account is **`david` / `csulb123`** (admin). It works on every device out of the box. **Change this password before sharing the URL**: Users → Add a user → re-enter `david` with a new password, then put the generated row in the SharePoint Users list (it overrides the bundled one after a sync). Login is universal — accounts come from the Users list, not per-device.
+**Sign in:** two bundled admin accounts, **`david`** and **`admin`**, work on every device out of the box (the passwords are held by the PMO — not published here since this repo is public). To rotate a password: Users → Add a user → re-enter the same username with a new password, then let it sync (or paste the generated row into the SharePoint Users list — it overrides the bundled one). Login is universal — accounts come from the Users list, not per-device.
 
 **Contents of this package**
 
@@ -34,7 +34,7 @@ Branding follows the CSULB brand guidance: white-first open layout, the yellow/b
 
 1. Create a GitHub repo (e.g. `beach-property`) and upload everything in this folder (keep the `seed/` folder structure).
 2. Repo → **Settings → Pages** → Source: *Deploy from a branch* → `main` / root → Save.
-3. Open `https://<your-username>.github.io/beach-property/` — the app seeds 3,674 active + 8,311 disposed assets into the device. Sign in as `david` / `csulb123`.
+3. Open `https://<your-username>.github.io/beach-property/` — the app seeds 3,674 active + 8,311 disposed assets into the device. Sign in with a bundled admin account (see above).
 
 The app is fully usable at this point (search, audit, import, export) — sync just isn't shared yet. On phones: open the URL in Chrome/Safari → **Add to Home Screen** for a full-screen app that works offline.
 
@@ -122,7 +122,7 @@ If true:
 ```
 Create a flow named "BeachProperty-Update" that starts with the "When an HTTP request is received" trigger, method POST, no request body schema.
 
-Add a Parse JSON data operation whose content is the expression json(string(triggerBody())), with this sample schema: {"key":"x","user":"x","assetUpserts":[{"id":"1","tag":"","dept":"","deptName":"","div":"","desc":"","serial":"","location":"","custodian":"","category":"","acqDate":"","inServiceDt":"","po":"","value":0,"status":"","notes":"","updatedBy":"","updatedAt":"","history":""}],"auditLog":[{"AssetID":"","Field":"","OldValue":"","NewValue":"","Status":"","Timestamp":"","User":""}],"importLog":[{"Timestamp":"","User":"","Filename":"","RowsMatched":0,"RowsAdded":0,"RowsConflicted":0,"Summary":""}]}
+Add a Parse JSON data operation whose content is the expression json(string(triggerBody())), with this sample schema: {"key":"x","user":"x","assetUpserts":[{"id":"1","tag":"","dept":"","deptName":"","div":"","desc":"","serial":"","location":"","custodian":"","category":"","acqDate":"","inServiceDt":"","po":"","value":0,"status":"","notes":"","updatedBy":"","updatedAt":"","history":""}],"auditLog":[{"AssetID":"","Field":"","OldValue":"","NewValue":"","Status":"","Timestamp":"","User":""}],"importLog":[{"Timestamp":"","User":"","Filename":"","RowsMatched":0,"RowsAdded":0,"RowsConflicted":0,"Summary":""}],"userUpserts":[{"username":"","display":"","role":"","salt":"","hash":"","active":""}]}
 
 Add a Condition: check whether the Parse JSON output "key" equals the text "YOUR_SHARED_KEY_HERE".
 
@@ -134,7 +134,10 @@ If true:
    b. Condition: if that Get items returned more than 0 results, Update the matching item (look up its ID from the Get items result) in "Assets"; otherwise Create a new item in "Assets". Either way map: Title from id, TagNumber from tag, Dept from dept, DeptName from deptName, DivArea from div, Description from desc, SerialID from serial, Location from location, Custodian from custodian, Category from category, AcqDate from acqDate, InServiceDt from inServiceDt, PONo from po, SumAmount from value, Status from status, Notes from notes, UpdatedBy from updatedBy, LastUpdated from updatedAt, EditHistory from history.
 2. Apply to each item in "auditLog": create an item in the "AuditUpdates" list mapping Title from AssetID, Field, OldValue, NewValue, Status, Timestamp, User one to one.
 3. Apply to each item in "importLog": create an item in the "ImportHistory" list mapping Title from Timestamp, User, Filename, RowsMatched, RowsAdded, RowsConflicted, Summary one to one.
-4. Respond with an HTTP Response action, status 200, header Access-Control-Allow-Origin: *, JSON body {"ok": true, "processed": the length of the assetUpserts array}.
+4. Apply to each item in "userUpserts":
+   a. Get items from the SharePoint "Users" list filtered by Title equal to the current item's "username", top count 1.
+   b. Condition: if that Get items returned more than 0 results, Update the matching item (look up its ID from the Get items result) in "Users"; otherwise Create a new item in "Users". Either way map: Title from username, DisplayName from display, Role from role, Salt from salt, PasswordHash from hash, Active from active.
+5. Respond with an HTTP Response action, status 200, header Access-Control-Allow-Origin: *, JSON body {"ok": true, "processed": the length of the assetUpserts array, "usersProcessed": the length of the userUpserts array}. Make the userUpserts loop and the usersProcessed length null-safe with coalesce(body('Parse_JSON')?['userUpserts'], json('[]')) so requests without that field don't fail.
 
 Turn on concurrency control (degree 10) on the assetUpserts Apply to each so bulk pushes finish faster.
 ```
@@ -144,7 +147,7 @@ Turn on concurrency control (degree 10) on the assetUpserts Apply to each so bul
 - [ ] The Assets **Get items** in Flow 1 has **Pagination ON, threshold 5000** (Settings ⋯ menu) — otherwise you silently get only 100 rows.
 - [ ] Flow 2's **Parse JSON** content is exactly the expression `json(string(triggerBody()))`, not the raw trigger body.
 - [ ] The Flow 2 filter query on **Get items** is `Title eq '@{items('Apply_to_each')?['id']}'` (single quotes around the dynamic value).
-- [ ] The Response bodies match the JSON shapes above exactly (`ok`/`assets`/`departments`/`users` for Flow 1, `ok`/`processed` for Flow 2) — the app's `pullData()`/`syncNow()` parse these by name.
+- [ ] The Response bodies match the JSON shapes above exactly (`ok`/`assets`/`departments`/`users` for Flow 1, `ok`/`processed`/`usersProcessed` for Flow 2) — the app's `pullData()`/`syncNow()` parse these by name. `usersProcessed` matters: the app only marks a device-added account as shared once the flow reports it handled the `userUpserts` array.
 
 If Copilot's draft drifts from any of these, open the action and fix it manually using Option B's field-by-field reference — it's the same flow, just written out step by step.
 
@@ -217,11 +220,17 @@ If Copilot's draft drifts from any of these, open the action and fix it manually
       - **No → Create item** (Assets) with the same field mapping.
 5. **Apply to each** on `auditLog` → **Create item** (AuditUpdates): `Title←AssetID`, then Field/OldValue/NewValue/Status/Timestamp/User one-to-one.
 6. **Apply to each** on `importLog` → **Create item** (ImportHistory): `Title←Timestamp`, rest one-to-one.
-7. **Response** → Status 200, header `Access-Control-Allow-Origin: *`, body:
+7. **Apply to each** on `userUpserts` (same upsert pattern as step 4, against the **Users** list). Use the expression `coalesce(body('Parse_JSON')?['userUpserts'], json('[]'))` as the Apply to each input so the flow doesn't error on older app versions that omit the field:
+   a. **Get items** (Users) → Filter Query: `Title eq '@{items('Apply_to_each_4')?['username']}'` → Top Count 1.
+   b. **Condition:** more than 0 results → **Update item**, else **Create item**. Map: `Title←username, DisplayName←display, Role←role, Salt←salt, PasswordHash←hash, Active←active`.
+   *(This is how accounts added from the app's Users screen reach SharePoint — without this step they stay device-local and the app keeps them marked "pushes on next sync".)*
+8. **Response** → Status 200, header `Access-Control-Allow-Origin: *`, body:
    ```json
-   { "ok": true, "processed": @{length(body('Parse_JSON')?['assetUpserts'])} }
+   { "ok": true, "processed": @{length(body('Parse_JSON')?['assetUpserts'])}, "usersProcessed": @{length(coalesce(body('Parse_JSON')?['userUpserts'], json('[]')))} }
    ```
-8. Save, copy the **HTTP POST URL** → the app's **Write flow URL**.
+9. Save, copy the **HTTP POST URL** → the app's **Write flow URL**.
+
+*Note: if Parse JSON's generated schema lists `userUpserts` under `required`, remove it from that list — older cached app versions POST without it and would otherwise fail schema validation.*
 
 *Tip: in step 4's Apply to each, turn on Concurrency (Settings → degree 10) so big bulk pushes finish faster.*
 
@@ -231,9 +240,9 @@ If Copilot's draft drifts from any of these, open the action and fix it manually
 
 On any device: sign in → **Settings** → paste the Read URL, Write URL, and shared key → **Save** → **Test connection** (should toast "Connection OK") → **Sync now**. These live only in the device's storage — never in the GitHub repo, which stays secret-free.
 
-To set up the next auditor's phone in one step: **Copy config code** on your device, send it to them, they tap **Paste config code**.
+To set up the next auditor's phone in one step: **Settings → Copy setup link** on an already-configured device, send them the link, and they just open it — sync settings apply automatically, no typing. (**Copy config code** / **Paste config code** does the same thing as a pasteable text blob if a link is awkward to share.)
 
-**Accounts:** add auditors from **Users → Add a user** (admin only): it generates the `Salt` + `PasswordHash` values — paste that row into the **Users** list. After the next sync, that person can sign in on any device with the same credentials. Passwords are hashed with PBKDF2 (200,000 iterations, per-user salt); SharePoint never sees a plaintext password. Note that anything in a public repo is public — the bundled hash can't be reversed to the password, but changing the starter password promptly is still the right move.
+**Accounts:** add auditors from **Users → Add a user** (admin only). The account works on that device immediately and is pushed to the SharePoint **Users** list on the next sync (needs the `userUpserts` step in the update flow — §3 above). If the flow doesn't have that step yet, the Users screen shows the account as pending and provides the row to paste into the list by hand. After the account reaches SharePoint, that person can sign in on any device with the same credentials. Passwords are hashed with PBKDF2 (200,000 iterations, per-user salt); SharePoint never sees a plaintext password. Note that anything in a public repo is public — the bundled hash can't be reversed to the password, but changing the starter password promptly is still the right move.
 
 ---
 
@@ -269,6 +278,7 @@ The app reads surveys the same way it reads assets: **on every load, through you
 | Sync pushes but pull returns 100 assets | Pagination wasn't enabled on Get items (Settings → Pagination → 5000). |
 | POST flow fails at Parse JSON | Content must be the expression `json(string(triggerBody()))`, not raw Body. |
 | Someone can't sign in on a new phone | Their row must be in the Users list *and* the phone must sync once (open Settings → Pull latest). |
+| A user added in the app stays "pushes on next sync" forever | The update flow is missing the `userUpserts` step (§3, Flow 2 step 7) — add it, or paste the manual row from the Users screen into the SharePoint Users list. Check the Settings sync log: "Write flow ignored N pending user account(s)" confirms this. |
 | Need a clean slate on a device | Settings → Reset this device (SharePoint untouched). |
 
 **Upgrade path:** when CSULB IT can register an Entra ID app, the flows can be replaced with direct Microsoft Graph calls + real SSO (MSAL.js) without changing the UI.
