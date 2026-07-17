@@ -555,7 +555,7 @@ const ST={assets:new Map(),depts:[],deptMap:{},users:[],session:null,sel:new Set
   q:'',scope:'all',deptView:{},sort:{k:'tag',dir:1},flt:{q:'',status:'',div:'',dept:'',noloc:false,survey:false},busy:false,lc:'A',
   photoIds:new Set(),
   surveys:[],archiveLoaded:false,sflt:{q:'',cat:'',st:'',act:'',sort:'new',linked:false,arc:false},surveyByAsset:new Map(),surveyGroups:new Map(),svChkMode:false,
-  aflt:{q:'',st:'',arc:false},ai:{msgs:[],view:[],busy:false}};
+  aflt:{q:'',st:'',arc:false},ai:{msgs:[],view:[],busy:false},tracker:null,auctionPay:new Map()};
 const lcPass=a=>ST.lc==='ALL'||(ST.lc==='D'?a.lc==='D':a.lc!=='D');
 function lcSeg(){return `<span class="lc-seg">${[['A','Active'],['ALL','All'],['D','Disposed']].map(([k,l])=>`<button data-lc="${k}" class="${ST.lc===k?'on':''}">${l}</button>`).join('')}</span>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-lc]');if(b){ST.lc=b.dataset.lc;ST.sel.clear();render()}});
@@ -649,6 +649,8 @@ async function boot(){
   }
   ST.depts.forEach(d=>ST.deptMap[d.deptId]=d);
   SURV_EDITS=await kvGet('survEdits')||{};
+  ST.tracker=await kvGet('trackerProgress')||null;
+  PAY_ROWS=await kvGet('auctionPayRows')||[];buildPaymentIndex();
   await loadSurveys();
   ST.pending=(await qAll()).filter(o=>!o.done).length;
   ST.photoIds=new Set(await phAllKeys());
@@ -679,8 +681,8 @@ function logout(){kvSet('session',null);location.reload()}
 function spShape(a){return{id:a.id,tag:a.tag,dept:a.dept,deptName:a.deptName,div:a.div,desc:a.desc,serial:a.serial,
   location:a.location,custodian:a.custodian,category:a.category,acqDate:a.acqDate,inServiceDt:a.inServiceDt,po:a.po,
   value:a.value,status:a.status,notes:a.notes,updatedBy:a.updatedBy,updatedAt:a.updatedAt,history:JSON.stringify(a.history||[])}}
-async function saveAsset(a,changes,silent){
-  a.updatedAt=nowStr();a.updatedBy=ST.session?ST.session.name:'?';
+async function saveAsset(a,changes,silent,by){
+  a.updatedAt=nowStr();a.updatedBy=by||(ST.session?ST.session.name:'?');
   (changes||[]).forEach(c=>{(a.history=a.history||[]).push({f:c.f,old:c.old,new:c.new,t:a.updatedAt,u:a.updatedBy})});
   ST.assets.set(a.id,a);await dbPutAsset(a);
   if(a.lc==='D'){syncChip();return} // disposal records are local reference data — not synced
@@ -991,6 +993,7 @@ function renderSearch(m){
 
 /* ---------------- physical inventory (departments) ---------------- */
 function deptStats(id){let t=0,r=0;for(const a of ST.assets.values())if(a.lc!=='D'&&a.dept===id){t++;if(a.status!=='Unreviewed')r++}return{t,r}}
+const trk=id=>ST.tracker&&ST.tracker.byDept[id]; // per-dept figures from an uploaded Inventory Tracker
 function renderDepts(m){
   const groups={};
   ST.depts.forEach(d=>{(groups[d.div]=groups[d.div]||[]).push(d)});
@@ -999,9 +1002,9 @@ function renderDepts(m){
   for(const div of Object.keys(groups)){
     html+=`<div class="div-h" data-div="${esc(div)}">${esc(div)}</div>`;
     for(const d of groups[div]){
-      const s=deptStats(d.deptId),pct=s.t?Math.round(100*s.r/s.t):0;
+      const s=deptStats(d.deptId),pct=s.t?Math.round(100*s.r/s.t):0,t=trk(d.deptId);
       html+=`<div class="card dept-row" data-dept="${esc(d.deptId)}" data-nm="${esc((d.name+' '+d.deptId).toLowerCase())}">
-        <div><div class="nm">${esc(d.name||'Department '+d.deptId)}</div><div class="sub">${deptPad(d.deptId)} · ${s.t} asset${s.t===1?'':'s'}</div></div>
+        <div><div class="nm">${esc(d.name||'Department '+d.deptId)}</div><div class="sub">${deptPad(d.deptId)} · ${s.t} asset${s.t===1?'':'s'}${t?` · <span class="muted">tracker ${t.found??'?'}/${t.onRecord??'?'}${t.completed?' ✓':''}</span>`:''}</div></div>
         <div class="right"><span class="pct" style="color:${pct===100?'var(--ok)':'var(--ink2)'}">${pct}%</span>
         <div class="meter ${pct===100?'full':''}"><i style="width:${pct}%"></i></div></div></div>`;
     }
@@ -1032,6 +1035,7 @@ function renderDept(m,id){
       <button class="btn btn-sm btn-dark" id="dDone">Complete department</button>
       <span class="seg"><button data-vm="card" class="${mode==='card'?'on':''}">Cards</button><button data-vm="table" class="${mode==='table'?'on':''}">Table</button></span>
     </div></div>
+  ${(()=>{const t=trk(id);return t?`<div class="note"><b>Tracker · ${esc(t.phase)}:</b> ${t.found??'?'} found / ${t.surveyed??'?'} surveyed / ${t.outstanding??'?'} outstanding of ${t.onRecord??'?'} on record${t.completed?` · <b style="color:var(--ok)">✓ completed ${esc(t.completedDate)}</b>`:''}${t.notes?`<br><span class="muted">${esc(t.notes)}</span>`:''}</div>`:''})()}
   <div id="dassets"></div>`;
   const sd=$('#dShowDisp');if(sd)sd.onclick=e=>{e.preventDefault();ST.lc='D';ST.flt={q:'',status:'',div:'',dept:id,noloc:false,survey:false};location.hash='#/assets'};
   $('#dOk').onclick=async()=>{
@@ -1540,6 +1544,8 @@ function buildSurveyIndex(){
   }
 }
 async function loadSurveys(){
+  const local=await kvGet('surveysLocal'); // device-local refresh from an uploaded Master Survey workbook
+  if(Array.isArray(local)&&local.length){ST.surveys=local;ST.archiveLoaded=false;buildSurveyIndex();return}
   try{ST.surveys=await fetch('seed/surveys.json').then(r=>r.json());ST.archiveLoaded=false;buildSurveyIndex()}
   catch(e){console.warn('survey seed load failed',e);ST.surveys=[];buildSurveyIndex()}
 }
@@ -1574,7 +1580,8 @@ function surveyRow(g){
       ${mt.open?'<span class="spill open">Open</span>':'<span class="spill">Completed</span>'}
       ${g.ar?'<span class="spill arc">history</span>':''}
       ${mt.linked?`<span class="srv-badge">⚑ ${mt.linked}</span>`:''}
-      ${nChk?`<span class="spill" style="background:var(--ok-bg);color:var(--ok);border-color:transparent">✓ ${nChk}/${g.items.length}</span>`:''}</div>
+      ${nChk?`<span class="spill" style="background:var(--ok-bg);color:var(--ok);border-color:transparent">✓ ${nChk}/${g.items.length}</span>`:''}
+      ${(()=>{const p=payFor(g);return p?`<span class="spill" style="background:var(--ok-bg);color:var(--ok);border-color:transparent" title="Auction payment collected">💵 ${payMoney(p.total)}</span>`:''})()}</div>
     <div class="kv"><span>${esc(mt.dept)||'—'}</span>${mt.date?`<span class="mono">${esc(mt.date)}</span>`:''}<span>${g.items.length} item${g.items.length===1?'':'s'}</span>${mt.acts.length?`<span>${esc(mt.acts.join(', '))}</span>`:''}</div>
     <div class="srow-desc">${esc(mt.desc)}</div></div>`;
 }
@@ -1688,6 +1695,21 @@ function renderSurvey(m,keyEnc){
     <div><div class="lab">Fiscal year</div>${esc(first.fy)||'—'}</div>
     <div><div class="lab">Linked assets</div>${mt.linked} of ${g.items.length}</div>
   </div>
+  ${(()=>{const p=payFor(g);if(!p)return'';return `<div class="card" style="border-color:var(--ok)">
+    <b style="font-size:15px">💵 Auction payments</b>
+    <div class="note" style="margin-top:8px">From the Public Surplus Payment Collection Report — device-local reference data.</div>
+    <div class="ro-grid" style="margin-top:10px">
+      <div><div class="lab">Total collected</div><b class="mono">${payMoney(p.total)}</b></div>
+      <div><div class="lab">Item sales</div><span class="mono">${payMoney(p.sold)}</span></div>
+      <div><div class="lab">Sales tax</div><span class="mono">${payMoney(p.tax)}</span></div>
+      <div><div class="lab">Lots sold</div>${p.rows.length}</div>
+      <div><div class="lab">ACH / check ref</div>${p.checks.map(esc).join(', ')||'—'}</div>
+      <div><div class="lab">Payout dates</div><span class="mono">${p.dateMin?esc(p.dateMin)+(p.dateMax&&p.dateMax!==p.dateMin?' → '+esc(p.dateMax):''):'—'}</span></div>
+    </div>
+    <div style="overflow-x:auto"><table class="plain" style="margin-top:12px;min-width:560px">
+      <tr><th>Rcpt</th><th>Date</th><th>Buyer</th><th>Item</th><th style="text-align:right">Sold</th><th style="text-align:right">Tax</th><th>ACH ref</th></tr>
+      ${p.rows.map(r=>`<tr><td class="mono">${esc(r.rcpt)}</td><td>${esc(r.date)}</td><td>${esc(r.user)}</td><td>${esc(r.title)}</td><td class="mono" style="text-align:right">${payMoney(r.sold)}</td><td class="mono" style="text-align:right">${payMoney(r.tax)}</td><td>${esc(r.check)||'—'}</td></tr>`).join('')}
+    </table></div></div>`})()}
   <div class="muted" style="font-size:13px;margin:6px 0 7px">${g.items.length} line item${g.items.length===1?'':'s'}${ST.svChkMode?' · check-ins and edits are saved on this device':''}</div>
   ${items}`;
   $('#svChk').onclick=()=>{ST.svChkMode=!ST.svChkMode;renderSurvey(m,keyEnc)};
@@ -1720,6 +1742,118 @@ function editSurvItem(g,i,m,keyEnc){
   };
 }
 
+/* ---------------- auction payments (Public Surplus "Payment Collection Report") ----------------
+   Device-local reference data. Matched to surveys by survey # (report column F, "Item Code/Tag").
+   Raw line rows stored in kv 'auctionPayRows'; aggregated per survey # into ST.auctionPay. */
+let PAY_ROWS=[];
+const payNorm=x=>String(x==null?'':x).toUpperCase().replace(/[^A-Z0-9]/g,'');
+const payNum=x=>{const n=parseFloat(String(x==null?'':x).replace(/[^0-9.\-]/g,''));return Number.isFinite(n)?n:0};
+const payMoney=n=>'$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const PAY_MON={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+function payDate(s){s=String(s==null?'':s).trim();
+  const m=s.match(/([A-Za-z]{3})[a-z]*\s+(\d{1,2}),?\s*(\d{4})/);
+  if(m&&PAY_MON[m[1].toLowerCase()])return `${m[3]}-${PAY_MON[m[1].toLowerCase()]}-${m[2].padStart(2,'0')}`;
+  const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return iso?iso[0]:''}
+const payKey=r=>[r.rcpt,r.lot,r.code].join('|'); // a receipt line for one auction lot — natural unique key
+function buildPaymentIndex(){
+  ST.auctionPay=new Map();
+  for(const r of PAY_ROWS){
+    const nk=payNorm(r.code);if(!nk)continue;
+    let g=ST.auctionPay.get(nk);
+    if(!g){g={no:r.code,norm:nk,rows:[],sold:0,collFee:0,aucFee:0,catFee:0,total:0,tax:0,checks:[],buyers:[],lots:[],dateMin:'',dateMax:''};ST.auctionPay.set(nk,g)}
+    g.rows.push(r);
+    g.sold+=r.sold;g.collFee+=r.collFee;g.aucFee+=r.aucFee;g.catFee+=r.catFee;g.total+=r.total;g.tax+=r.tax;
+    if(r.check&&!g.checks.includes(r.check))g.checks.push(r.check);
+    if(r.user&&!g.buyers.includes(r.user))g.buyers.push(r.user);
+    if(r.lot&&!g.lots.includes(r.lot))g.lots.push(r.lot);
+    if(r.iso){if(!g.dateMin||r.iso<g.dateMin)g.dateMin=r.iso;if(r.iso>g.dateMax)g.dateMax=r.iso}
+  }
+  for(const g of ST.auctionPay.values())g.rows.sort((a,b)=>(a.iso||'').localeCompare(b.iso||''));
+}
+const payFor=g=>(g&&g.no)?ST.auctionPay.get(payNorm(g.no)):null;
+function parsePaymentReport(wb){
+  const rows=[];
+  for(const name of wb.SheetNames){
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:''});
+    let hi=-1;
+    for(let i=0;i<Math.min(aoa.length,15);i++){
+      const line=(aoa[i]||[]).map(c=>String(c||'').toLowerCase());
+      if(line.some(c=>c.includes('item code'))&&line.some(c=>c.includes('sold')||c.includes('ps check')||c.includes('total'))){hi=i;break}
+    }
+    if(hi<0)continue;
+    const hdr=(aoa[hi]||[]).map(c=>String(c||'').toLowerCase().replace(/\n/g,' ').trim());
+    const col=(...ks)=>{for(const k of ks){const ix=hdr.findIndex(h=>h.includes(k));if(ix>=0)return ix}return -1};
+    const C={rcpt:col('rcpt #','receipt'),date:col('rcpt date','date'),user:col('user','buyer'),
+      lot:col('auction'),code:col('item code','tag'),title:col('title'),sold:col('sold amnt','sold'),
+      coll:col('coll fee'),auc:col('auction fee'),cat:col('cat. fee','cat fee'),total:col('total'),
+      tax:col('sales tax','tax'),check:col('ps check','check'),dept:col('dept')};
+    if(C.code<0)continue;
+    const g=(r,i)=>(i>=0&&i<r.length)?String(r[i]==null?'':r[i]).trim():'';
+    for(let ri=hi+1;ri<aoa.length;ri++){
+      const r=aoa[ri];if(!r||r.every(c=>String(c||'')===''))continue;
+      const code=g(r,C.code);if(!code||/^item\s*code/i.test(code))continue;
+      const sold=payNum(g(r,C.sold)),total=payNum(g(r,C.total)),title=g(r,C.title);
+      if(!sold&&!total&&!title)continue;
+      const date=g(r,C.date);
+      rows.push({rcpt:g(r,C.rcpt),date,iso:payDate(date),user:g(r,C.user),lot:g(r,C.lot).replace(/\.0+$/,''),
+        code,title,sold,collFee:payNum(g(r,C.coll)),aucFee:payNum(g(r,C.auc)),catFee:payNum(g(r,C.cat)),
+        total:total||sold,tax:payNum(g(r,C.tax)),check:g(r,C.check),dept:g(r,C.dept)});
+    }
+  }
+  return rows;
+}
+function previewPaymentImport(wb,name,box){
+  box.innerHTML=`<div class="card">${loadingHTML()}<div class="muted" style="font-size:12px;margin-top:4px">Reading payment collection report…</div></div>`;
+  setTimeout(()=>{
+    let rows;try{rows=parsePaymentReport(wb)}catch(e){box.innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(name)}</b> — payment report parse failed: ${esc(e.message||e)}</div>`;return}
+    if(!rows.length){box.innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(name)}</b> — no payment rows found (need an "Item Code/Tag" column with sold amounts).</div>`;return}
+    // dedup within the file (last wins), then diff against existing device data
+    const inMap=new Map();for(const r of rows)inMap.set(payKey(r),r);
+    const incoming=[...inMap.values()];
+    const cur=new Map(PAY_ROWS.map(r=>[payKey(r),r]));
+    let added=0,updated=0;
+    for(const r of incoming){const k=payKey(r);
+      if(!cur.has(k))added++;else if(JSON.stringify(cur.get(k))!==JSON.stringify(r))updated++}
+    // how many report codes line up with a known survey #
+    const survNos=new Set();for(const s of ST.surveys)if(s.no)survNos.add(payNorm(s.no));
+    const codes=new Set(incoming.map(r=>payNorm(r.code)));
+    let matched=0;for(const c of codes)if(survNos.has(c))matched++;
+    const totalSold=incoming.reduce((n,r)=>n+r.sold,0),totalTax=incoming.reduce((n,r)=>n+r.tax,0),totalColl=incoming.reduce((n,r)=>n+r.total,0);
+    const checks=[...new Set(incoming.map(r=>r.check).filter(Boolean))];
+    const dates=incoming.map(r=>r.iso).filter(Boolean).sort();
+    box.innerHTML=`<div class="card" data-imp-pending><b>${esc(name)}</b> — detected as a <b>Payment Collection Report</b>
+      <div class="note">Attaches auction sale &amp; ACH payment info to surveys, matched by survey # (report column <b>Item Code/Tag</b>). Device-local reference data — not pushed to SharePoint. Re-importing a newer report updates existing receipts.</div>
+      <table class="plain" style="margin-top:10px"><tr><th></th><th>Count</th></tr>
+        <tr><td>Payment line items in file</td><td>${incoming.length.toLocaleString()}</td></tr>
+        <tr><td>New receipts to add</td><td>${added.toLocaleString()}</td></tr>
+        <tr><td>Existing receipts to update</td><td>${updated.toLocaleString()}</td></tr>
+        <tr><td>Distinct survey #s in file</td><td>${codes.size.toLocaleString()}</td></tr>
+        <tr><td>…matched to a known survey</td><td>${matched.toLocaleString()}</td></tr>
+        <tr><td>Total collected</td><td class="mono">${payMoney(totalColl)}</td></tr>
+        <tr><td>Sales tax</td><td class="mono">${payMoney(totalTax)}</td></tr>
+        <tr><td>ACH / check references</td><td>${checks.length.toLocaleString()}</td></tr>
+        ${dates.length?`<tr><td>Date range</td><td class="mono">${esc(dates[0])} → ${esc(dates[dates.length-1])}</td></tr>`:''}
+      </table>
+      ${added+updated?'':'<div class="note" style="margin-top:10px;margin-bottom:0">Everything in this file has already been imported — applying again is harmless.</div>'}
+      <div class="acts" style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btn-gold" id="payGo">Apply payment data</button></div></div>`;
+    box.querySelector('#payGo').onclick=async()=>{
+      const btn=box.querySelector('#payGo');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Applying…';
+      await new Promise(r=>setTimeout(r,30));
+      const map=new Map(PAY_ROWS.map(r=>[payKey(r),r]));
+      for(const r of incoming)map.set(payKey(r),r);
+      PAY_ROWS=[...map.values()];
+      await kvSet('auctionPayRows',PAY_ROWS);buildPaymentIndex();
+      toast(`Payment data applied — ${added.toLocaleString()} added, ${updated.toLocaleString()} updated`);
+      box.innerHTML=`<div class="note" style="border-color:var(--ok);color:var(--ok)">✓ Payment data applied — ${incoming.length.toLocaleString()} line items (${matched.toLocaleString()} matched to surveys, ${payMoney(totalColl)} collected). <a href="#/auctions">Open Auctions →</a></div>`;
+    };
+  },30);
+}
+async function clearPayments(){
+  if(!PAY_ROWS.length){toast('No auction payment data on this device');return}
+  if(!await confirmDlg('Clear auction payments',`Remove all ${PAY_ROWS.length.toLocaleString()} imported payment line item(s) from this device? Survey and auction records are untouched — re-import the Payment Collection Report to restore.`,'Clear payments',true))return;
+  PAY_ROWS=[];await kvSet('auctionPayRows',[]);buildPaymentIndex();toast('Auction payment data cleared');render();
+}
+
 /* ---------------- auctions (surveys with an AUCTION action) ---------------- */
 const isAuctionItem=s=>/auction/i.test(String(s.act||''));
 function auctionGroups(includeArc){
@@ -1736,6 +1870,8 @@ function renderAuctions(m){
   const open=rows.filter(g=>surveyMeta(g).open),done=rows.length-open.length;
   const items=rows.reduce((n,g)=>n+g.items.filter(isAuctionItem).length,0);
   const linked=rows.reduce((n,g)=>n+g.items.filter(s=>isAuctionItem(s)&&s.m).length,0);
+  const collected=rows.reduce((n,g)=>{const p=payFor(g);return n+(p?p.total:0)},0);
+  const paidCount=rows.reduce((n,g)=>n+(payFor(g)?1:0),0);
   if(f.st==='Open')rows=rows.filter(g=>surveyMeta(g).open);
   if(f.st==='Done')rows=rows.filter(g=>!surveyMeta(g).open);
   const q=f.q.trim().toLowerCase();
@@ -1750,6 +1886,7 @@ function renderAuctions(m){
     <div class="kpi"><div class="v">${done.toLocaleString()}</div><div class="l">Completed</div></div>
     <div class="kpi"><div class="v">${items.toLocaleString()}</div><div class="l">Auction line items</div></div>
     <div class="kpi"><div class="v">${linked.toLocaleString()}</div><div class="l">Linked to an asset</div></div>
+    ${collected?`<div class="kpi"><div class="v" style="color:var(--ok)">${payMoney(collected)}</div><div class="l">Collected · ${paidCount.toLocaleString()} survey${paidCount===1?'':'s'} paid</div></div>`:''}
   </div>
   <div class="search-wrap"><span class="s-ico">${I.search}</span>
     <input id="aq" type="search" placeholder="Survey #, department, item description…" value="${esc(f.q)}" autocomplete="off">
@@ -1932,11 +2069,14 @@ function renderAsk(m){
 }
 
 function renderImport(m){
-  m.innerHTML=`<div class="page-h"><h2>Import asset data</h2></div>
+  m.innerHTML=`<div class="page-h"><h2>Import data</h2></div>
   <div class="note">Accepts, with automatic format detection:<br>
   · <b>PeopleSoft asset extracts</b> (LB_AM_PROPERTY… CSV/XLS) — matched by Asset ID, multi-cost rows merged with summed value<br>
   · <b>PMO inventory worksheets</b> (Physical Inventory Listing — like the Music dept sheet) — header found automatically, <b>PMO COMMENTS</b> mapped to statuses: "OK"/"Photo of Tag" → Verified OK, "LOST/MISSING" → Not Found, "Not Verified" → status untouched, anything else → Other; the comment is kept as a note<br>
   · <b>Disposal summaries</b> (LB_AM_DISPOSAL…) — adds/refreshes retired assets (kept on this device as reference data, not synced)<br>
+  · <b>Master Survey workbook</b> (<span class="mono">Master - Survey.xlsx</span>) — refreshes the current survey line items in the Surveys section (device-local; archived history is untouched)<br>
+  · <b>Payment Collection Report</b> (Public Surplus <span class="mono">.xls</span>) — attaches auction sale amounts &amp; ACH payment references to surveys, matched by survey # (report column <b>Item Code/Tag</b>); re-import newer reports any time to fill in ACH info for auctions that have since closed<br>
+  · <b>FY 25-26 Inventory Tracker</b> — updates per-department progress figures on the Physical Inventory pages; optionally marks completed departments' assets Verified OK<br>
   · <b>This app's own exports</b> — for round-tripping<br>
   You can select <b>several files at once</b> (or drag &amp; drop them below) — they are combined into one preview; where two files disagree on the same asset, the file listed later wins.
   Quoted commas (e.g. <span class="mono">"Last, First"</span>) are always handled. Nothing changes until you review the preview.</div>
@@ -1992,7 +2132,30 @@ async function handleImportFiles(files){
   if(!files.length)return;
   const out=$('#impOut');
   out.innerHTML=`<div class="card">${loadingHTML()}<div class="muted" style="font-size:12px;margin-top:4px">Reading ${files.length===1?esc(files[0].name):files.length+' files'}…</div></div>`;
-  const parsed=[],errors=[];
+  // classify each workbook: Master Survey / Inventory Tracker / ordinary asset file
+  const surveyWbs=[],trackerWbs=[],paymentWbs=[],assetFiles=[],classErr=[];
+  for(const f of files){
+    if(/\.csv$/i.test(f.name)){assetFiles.push(f);continue}
+    let wb;
+    try{wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true})}
+    catch(err){classErr.push({name:f.name,error:'could not read workbook'});continue}
+    const t=detectWbType(wb);
+    if(t==='survey')surveyWbs.push({wb,name:f.name});
+    else if(t==='tracker')trackerWbs.push({wb,name:f.name});
+    else if(t==='payment')paymentWbs.push({wb,name:f.name});
+    else assetFiles.push(f);
+  }
+  out.innerHTML='';
+  for(const s of surveyWbs){const b=document.createElement('div');out.append(b);previewSurveyImport(s.wb,s.name,b)}
+  for(const t of trackerWbs){const b=document.createElement('div');out.append(b);previewTrackerImport(t.wb,t.name,b)}
+  for(const p of paymentWbs){const b=document.createElement('div');out.append(b);previewPaymentImport(p.wb,p.name,b)}
+  if(assetFiles.length){const b=document.createElement('div');out.append(b);await handleAssetFiles(assetFiles,b,classErr)}
+  else if(classErr.length&&!surveyWbs.length&&!trackerWbs.length&&!paymentWbs.length)
+    out.innerHTML=classErr.map(e=>`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(e.name)}</b> — ${esc(e.error)}</div>`).join('');
+  out.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function handleAssetFiles(files,out,priorErrors){
+  const parsed=[],errors=[...(priorErrors||[])];
   for(const f of files){
     try{const p=await parseImportFile(f);p.name=f.name;
       p.isDisp=p.rows.filter(r=>r.isDisposal).length>p.rows.length/2;parsed.push(p)}
@@ -2004,8 +2167,8 @@ async function handleImportFiles(files){
   }
   const updFiles=parsed.filter(p=>!p.isDisp),dispFiles=parsed.filter(p=>p.isDisp);
   const upd=mergeImportRows(updFiles),disp=mergeImportRows(dispFiles);
-  out.innerHTML=`${files.length>1||errors.length?'<div class="card" id="impFilesBox"></div>':''}<div id="impMainBox"></div><div id="impDispBox"></div>`;
-  if(files.length>1||errors.length){
+  out.innerHTML=`${parsed.length>1||errors.length?'<div class="card" id="impFilesBox"></div>':''}<div id="impMainBox"></div><div id="impDispBox"></div>`;
+  if(parsed.length>1||errors.length){
     $('#impFilesBox').innerHTML=`<b style="font-size:14px">${parsed.length} of ${files.length} file${files.length>1?'s':''} read</b>
       ${parsed.map(p=>`<div class="imp-row"><span class="mono" style="word-break:break-all">${esc(p.name)}</span><span>${p.rows.length.toLocaleString()} assets${p.skipped?` · ${p.skipped} rows skipped`:''}${p.isDisp?' · <b>disposal summary</b>':''}</span></div>`).join('')}
       ${errors.map(e=>`<div class="imp-row" style="color:var(--bad)"><span class="mono" style="word-break:break-all">${esc(e.name)}</span><span>failed: ${esc(e.error)}</span></div>`).join('')}
@@ -2014,7 +2177,6 @@ async function handleImportFiles(files){
   const label=fs=>fs.length===1?fs[0].name:fs.map(p=>p.name).join(' + ');
   if(upd.rows.length)previewImport(diffImport(upd.rows),label(updFiles),upd.rows.length,updFiles.reduce((n,p)=>n+p.skipped,0),$('#impMainBox'));
   if(disp.rows.length)previewDisposalImport(disp.rows,label(dispFiles),$('#impDispBox'));
-  out.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function importSectionDone(box,msg){
   box.innerHTML=`<div class="note" style="border-color:var(--ok);color:var(--ok)">✓ ${esc(msg)}</div>`;
@@ -2107,6 +2269,162 @@ function previewImport(d,fname,total,skipped,box){
   };
 }
 
+/* ---------------- workbook imports: Master Survey + Inventory Tracker ---------------- */
+function detectWbType(wb){
+  const names=wb.SheetNames.map(n=>n.trim().replace(/\s+/g,' ').toUpperCase());
+  if(names.some(n=>/^PHASE\s*\d/.test(n)))return'tracker';
+  if(names.some(n=>/(SURVEY APP|TRANSFERS|CMP\s*-?\s*INV|CMP\s*-?\s*NON|BOOKSTORE)/.test(n)))return'survey';
+  for(const nm of wb.SheetNames){ // header fallback for renamed sheets
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,raw:false,defval:''});
+    const hdr=(aoa[0]||[]).concat(aoa[1]||[],aoa[2]||[]).map(c=>String(c||'').toLowerCase());
+    const has=s=>hdr.some(c=>c.includes(s));
+    if(has('on record')&&has('outstanding'))return'tracker';
+    if(has('disposal action')&&(has('survey #')||has('logged')))return'survey';
+    // Payment Collection Report — the header row sits several rows below a title banner
+    const wide=aoa.slice(0,12).flat().map(c=>String(c||'').toLowerCase());
+    const hasW=s=>wide.some(c=>c.includes(s));
+    if(hasW('item code')&&(hasW('sold amnt')||hasW('ps check')))return'payment';
+  }
+  return null;
+}
+/* --- survey workbook (current sheets only; mirrors tools/build_surveys.py) --- */
+const SURV_WB_SHEETS={'NEW SURVEY APP':'NEW','BOOKSTORE':'BK','CMP-INV':'CI','CMP-NON-INV':'CNI','TRANSFERS':'TR','FDN':'FDN'};
+const svCell=x=>{if(x==null)return'';if(x instanceof Date)return x.toISOString().slice(0,10);
+  if(typeof x==='number')return String(x);
+  const t=String(x).trim();return /^(nan|nat|none|null)$/i.test(t)?'':t};
+const svFind=(hdr,...keys)=>{for(let i=0;i<hdr.length;i++){const h=String(hdr[i]||'').toLowerCase().replace(/\n/g,' ');for(const k of keys)if(h.includes(k))return i}return -1};
+function parseSurveyWorkbook(wb){
+  const recs=[];let ki=0;const byCat={};
+  for(const name of wb.SheetNames){
+    const cat=SURV_WB_SHEETS[name.trim().replace(/\s+/g,' ').toUpperCase()];
+    if(!cat)continue; // current sheets only — archive stays as-is
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:null});
+    if(aoa.length<3)continue;
+    const hdr=(aoa[1]||[]).map(c=>svCell(c)); // header on row 2
+    const C={no:svFind(hdr,'survey #','survey#'),d:svFind(hdr,'description'),aid:svFind(hdr,'asset id'),
+      tag:svFind(hdr,'tag'),ser:svFind(hdr,'serial'),yr:svFind(hdr,'in service','acq date','acqdate'),
+      amt:svFind(hdr,'original amount','amount'),da:svFind(hdr,'date assigned'),dc:svFind(hdr,'date completed'),
+      lb:svFind(hdr,'logged'),cb:svFind(hdr,'closed'),cc:svFind(hdr,'disposal code'),
+      cond:svFind(hdr,'disposal condition','condition'),act:svFind(hdr,'disposal action','action'),
+      nt:svFind(hdr,'notes'),fy:svFind(hdr,'fy sort','fy')};
+    const deptIdx=[],dnameIdx=[];
+    hdr.forEach((h,i)=>{const hl=String(h).toLowerCase().replace(/\n/g,' ');
+      if(hl.includes('dept id')||hl.includes('dept #')||hl.includes('dept#'))deptIdx.push(i);
+      if(hl.includes('dept name'))dnameIdx.push(i)});
+    const isTR=cat==='TR',g=(r,i)=>(i>=0&&i<r.length)?svCell(r[i]):'';
+    for(let ri=2;ri<aoa.length;ri++){
+      const r=aoa[ri];if(!r||r.every(c=>c==null))continue;
+      const desc=g(r,C.d),no=g(r,C.no),tag=g(r,C.tag),ser=g(r,C.ser),aid=g(r,C.aid);
+      if(!(desc||no||tag||ser))continue;
+      const rec={k:'u'+(ki++),cat,ar:0};
+      if(no)rec.no=no;if(desc)rec.d=desc;if(aid)rec.aid=aid;if(tag)rec.tag=tag;if(ser)rec.ser=ser;
+      for(const f of['yr','amt','da','dc','lb','cb','cc','cond','act','nt','fy']){const v=g(r,C[f]);if(v)rec[f]=v}
+      if(isTR&&deptIdx.length>=2){
+        const fd=g(r,deptIdx[0]),td=g(r,deptIdx[1]),fdn=dnameIdx.length>=1?g(r,dnameIdx[0]):'',tdn=dnameIdx.length>=2?g(r,dnameIdx[1]):'';
+        if(fd)rec.fd=fd;if(td)rec.td=td;if(fdn)rec.fdn=fdn;if(tdn)rec.tdn=tdn;
+      }else{
+        const dp=deptIdx.length?g(r,deptIdx[0]):'',dn=dnameIdx.length?g(r,dnameIdx[0]):'';
+        if(dp)rec.dp=dp;if(dn)rec.dn=dn;
+      }
+      rec.st=g(r,C.dc)?'Done':'Open';
+      recs.push(rec);byCat[cat]=(byCat[cat]||0)+1;
+    }
+  }
+  return{recs,byCat};
+}
+function previewSurveyImport(wb,name,box){
+  box.innerHTML=`<div class="card">${loadingHTML()}<div class="muted" style="font-size:12px;margin-top:4px">Parsing survey workbook…</div></div>`;
+  setTimeout(()=>{
+    let out;try{out=parseSurveyWorkbook(wb)}catch(e){box.innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(name)}</b> — survey parse failed: ${esc(e.message||e)}</div>`;return}
+    const{recs,byCat}=out;
+    if(!recs.length){box.innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(name)}</b> — no survey rows found in the current sheets.</div>`;return}
+    const groups=new Set(recs.map(r=>r.cat+'|'+(r.no||'')));
+    box.innerHTML=`<div class="card" data-imp-pending><b>${esc(name)}</b> — detected as the <b>Master Survey workbook</b>
+      <div class="note">Refreshes the current survey line items on this device (archived history is kept as-is). Surveys are reference data — not pushed to SharePoint.</div>
+      <table class="plain" style="margin-top:10px"><tr><th></th><th>Count</th></tr>
+        <tr><td>Current survey line items</td><td>${recs.length.toLocaleString()}</td></tr>
+        <tr><td>Distinct surveys</td><td>${groups.size.toLocaleString()}</td></tr>
+        ${Object.entries(byCat).map(([c,n])=>`<tr><td class="muted">${esc(SURVCAT[c]||c)}</td><td class="muted">${n.toLocaleString()}</td></tr>`).join('')}
+      </table>
+      <div class="acts" style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btn-gold" id="svGo">Refresh surveys</button></div></div>`;
+    $('#svGo').onclick=async()=>{
+      const btn=$('#svGo');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Applying…';
+      await new Promise(r=>setTimeout(r,30));
+      const keep=ST.archiveLoaded?ST.surveys.filter(s=>s.ar):[];
+      ST.surveys=recs.concat(keep);await kvSet('surveysLocal',recs);buildSurveyIndex();
+      const matched=recs.filter(s=>s.m).length;
+      toast(`Surveys refreshed — ${recs.length.toLocaleString()} items, ${matched.toLocaleString()} matched to assets`);
+      box.innerHTML=`<div class="note" style="border-color:var(--ok);color:var(--ok)">✓ Surveys refreshed — ${recs.length.toLocaleString()} current line items (${matched.toLocaleString()} linked to assets). <a href="#/surveys">Open Surveys →</a></div>`;
+    };
+  },30);
+}
+/* --- FY 25-26 Inventory Tracker (per-department progress) --- */
+const trNum=x=>{const n=parseInt(String(x??'').replace(/[^\d-]/g,''),10);return Number.isFinite(n)?n:null};
+const trDate=x=>{if(x instanceof Date)return x.toISOString().slice(0,10);const t=String(x??'').trim();return(/\d/.test(t)&&!/^[-\s]+$/.test(t))?t:''};
+function parseTrackerWorkbook(wb){
+  const byDept={};let sheets=0;
+  for(const name of wb.SheetNames){
+    if(!/^phase\s*\d/i.test(name.trim()))continue;
+    sheets++;
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:null});
+    let hi=aoa.findIndex(r=>(r||[]).some(c=>/dept\s*id/i.test(String(c||'')))&&(r||[]).some(c=>/on record/i.test(String(c||''))));
+    if(hi<0)hi=1;
+    const hdr=(aoa[hi]||[]).map(c=>String(c||'').toLowerCase().replace(/\n/g,' ').trim());
+    const col=(...ks)=>{for(const k of ks){const ix=hdr.findIndex(h=>h===k);if(ix>=0)return ix}for(const k of ks){const ix=hdr.findIndex(h=>h.includes(k));if(ix>=0)return ix}return -1};
+    const cId=col('deptid','dept id'),cNm=col('dept name'),cOn=col('on record'),cF=col('found'),
+      cS=col('surveyed'),cO=col('outstanding'),cC=col('completed'),cNt=col('notes');
+    for(let ri=hi+1;ri<aoa.length;ri++){
+      const r=aoa[ri];if(!r)continue;
+      const rawId=cId>=0?String(r[cId]??'').trim():'';
+      if(!/^\d+$/.test(rawId))continue; // department rows only (skips DIV-AREA subtotals + blanks)
+      const id=String(parseInt(rawId,10)),cd=cC>=0?trDate(r[cC]):'';
+      byDept[id]={phase:name.trim(),name:cNm>=0?String(r[cNm]??'').trim():'',
+        onRecord:cOn>=0?trNum(r[cOn]):null,found:cF>=0?trNum(r[cF]):null,
+        surveyed:cS>=0?trNum(r[cS]):null,outstanding:cO>=0?trNum(r[cO]):null,
+        completedDate:cd,completed:!!cd,notes:cNt>=0?String(r[cNt]??'').trim():''};
+    }
+  }
+  return{byDept,sheets};
+}
+function previewTrackerImport(wb,name,box){
+  box.innerHTML=`<div class="card">${loadingHTML()}<div class="muted" style="font-size:12px;margin-top:4px">Reading tracker…</div></div>`;
+  setTimeout(()=>{
+    let out;try{out=parseTrackerWorkbook(wb)}catch(e){box.innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(name)}</b> — tracker parse failed: ${esc(e.message||e)}</div>`;return}
+    const{byDept,sheets}=out,ids=Object.keys(byDept);
+    if(!ids.length){box.innerHTML=`<div class="note" style="border-color:var(--bad);color:var(--bad)"><b>${esc(name)}</b> — no department rows found.</div>`;return}
+    const done=ids.filter(id=>byDept[id].completed),doneSet=new Set(done);
+    let cand=0;for(const a of ST.assets.values())if(a.lc!=='D'&&a.status==='Unreviewed'&&doneSet.has(a.dept))cand++;
+    const totFound=ids.reduce((n,id)=>n+(byDept[id].found||0),0),totOn=ids.reduce((n,id)=>n+(byDept[id].onRecord||0),0);
+    box.innerHTML=`<div class="card" data-imp-pending><b>${esc(name)}</b> — detected as the <b>FY 25-26 Inventory Tracker</b>
+      <div class="note">Updates each department's progress figures (from ${sheets} phase sheet${sheets===1?'':'s'}) shown on the Physical Inventory pages. These figures are device-local.</div>
+      <table class="plain" style="margin-top:10px"><tr><th></th><th>Count</th></tr>
+        <tr><td>Departments in tracker</td><td>${ids.length}</td></tr>
+        <tr><td>Marked complete (has a Completed date)</td><td>${done.length}</td></tr>
+        <tr><td>Assets located (Found / On Record)</td><td>${totFound.toLocaleString()} / ${totOn.toLocaleString()}</td></tr>
+      </table>
+      <label class="imp-row" style="cursor:pointer;margin-top:8px"><span>Also mark the <b>${cand.toLocaleString()}</b> Unreviewed asset(s) in completed departments as <b>Verified OK</b> <span class="muted">(UpdatedBy = Tracker Import; pushes to SharePoint)</span></span><input type="checkbox" id="trMark" ${cand?'':'disabled'}></label>
+      <div class="acts" style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn btn-gold" id="trGo">Apply tracker</button></div></div>`;
+    $('#trGo').onclick=async()=>{
+      const mark=$('#trMark').checked,btn=$('#trGo');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Applying…';
+      await new Promise(r=>setTimeout(r,30));
+      ST.tracker={file:name,at:nowStr(),byDept};await kvSet('trackerProgress',ST.tracker);
+      ST.depts.forEach(d=>{const t=byDept[d.deptId];if(t&&t.completed)d.completed=true});
+      await kvSet('depts',ST.depts);
+      let nOk=0;
+      if(mark){
+        for(const a of ST.assets.values()){
+          if(a.lc==='D'||a.status!=='Unreviewed'||!(byDept[a.dept]&&byDept[a.dept].completed))continue;
+          a.status='Verified OK';await saveAsset(a,[{f:'status',old:'Unreviewed',new:'Verified OK'}],true,'Tracker Import');nOk++;
+        }
+        if(nOk){await qAdd({kind:'import',payload:{Timestamp:nowStr(),User:ST.session.name,Filename:name,RowsMatched:nOk,RowsAdded:0,RowsConflicted:0,Summary:JSON.stringify({trackerMarkedOK:nOk,completedDepts:done.length})},t:nowStr()});
+          ST.pending=(await qAll()).filter(o=>!o.done).length;syncChip();scheduleAutoSync()}
+      }
+      toast(`Tracker applied — ${ids.length} departments${nOk?`, ${nOk.toLocaleString()} assets marked Verified OK`:''}`);
+      box.innerHTML=`<div class="note" style="border-color:var(--ok);color:var(--ok)">✓ Tracker applied — ${ids.length} departments updated${nOk?`, ${nOk.toLocaleString()} assets set to Verified OK`:''}. <a href="#/depts">Open Physical Inventory →</a></div>`;
+    };
+  },30);
+}
+
 /* ---------------- export ---------------- */
 function originalOf(a,f){const h=(a.history||[]).find(x=>x.f===f);return h?String(h.old??''):''}
 function exportRows(scope){
@@ -2154,7 +2472,7 @@ function renderExport(m){
     const btn=$('#exBak');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Preparing…';
     const photoKeys=await phAllKeys();const photos={};
     for(const id of photoKeys){const url=await phGet(id);if(url)photos[id]=url}
-    dl(new Blob([JSON.stringify({assets:[...ST.assets.values()],depts:ST.depts,photos,survEdits:SURV_EDITS,exported:nowStr()})],
+    dl(new Blob([JSON.stringify({assets:[...ST.assets.values()],depts:ST.depts,photos,survEdits:SURV_EDITS,auctionPay:PAY_ROWS,exported:nowStr()})],
       {type:'application/json'}),'beach-assets-backup-'+nowStr().replace(/[: ]/g,'-')+'.json');
     btn.disabled=false;btn.textContent='Backup everything (JSON)';
     toast('Backup downloaded'+(photoKeys.length?` (incl. ${photoKeys.length} photo${photoKeys.length===1?'':'s'})`:''));
@@ -2230,10 +2548,12 @@ function renderSettings(m){
   <div class="card"><b style="font-size:15px">Data</b>
     <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px">
       <button class="btn" id="dataPull">Pull latest from SharePoint</button>
+      <button class="btn" id="dataClearPay">Clear auction payments${PAY_ROWS.length?` (${PAY_ROWS.length.toLocaleString()})`:''}</button>
       <button class="btn btn-danger" id="dataNuke">🗑 Nuke &amp; rebuild data</button>
       <button class="btn btn-danger" id="dataReset">Reset this device</button></div>
     <div class="muted" style="font-size:12.5px;margin-top:9px">
       <b>Nuke &amp; rebuild</b> wipes local asset/department records and the pending sync queue, then reloads fresh from the bundled seed exports (and re-pulls SharePoint right after, if sync is configured) — keeps your sign-in and sync settings. Use this when local data looks stale or corrupted.<br>
+      <b>Clear auction payments</b> removes only the imported Payment Collection Report data (device-local); surveys and auctions are untouched.<br>
       <b>Reset this device</b> is the full factory reset — also erases sign-in and sync settings.
     </div></div>
   <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Beach Asset Management · CSULB Property Management Office · build 4.2 “Horizon”</div>`;
@@ -2257,6 +2577,7 @@ function renderSettings(m){
       catch(e){toast('Invalid config code',1)}}};
   $('#dataPull').onclick=async()=>{if(!ST.cfg.getUrl){toast('Set the Read flow URL first',1);return}
     ST.busy=true;syncChip();try{await pullData();toast('Pulled latest data')}catch(e){toast('Pull failed: '+e.message,1)}finally{ST.busy=false;syncChip()}};
+  $('#dataClearPay').onclick=()=>clearPayments();
   $('#dataNuke').onclick=()=>promptNuke();
   $('#dataReset').onclick=async()=>{
     if(await confirmDlg('Reset this device','All local data, pending changes, and sign-in info on this device will be erased and seed data reloaded. SharePoint is not touched.','Erase and reload',true)){
@@ -2283,6 +2604,7 @@ const CMDS=()=>[
   {label:'Sync now',hint:'Push pending changes & pull latest',action:()=>syncNow()},
   {label:'Scan a tag / QR code',hint:'Camera lookup',action:()=>openScanner()},
   {label:'Toggle theme',hint:ST.theme==='light'?'Switch to dark':'Switch to light',action:async()=>{ST.theme=ST.theme==='light'?'dark':'light';document.documentElement.dataset.theme=ST.theme;await kvSet('theme',ST.theme);if(ST.route.v==='settings')render()}},
+  {label:'Clear auction payments',hint:'Remove imported Payment Collection Report data',action:()=>clearPayments()},
   {label:'Nuke & rebuild data',hint:'Wipe local data on this device and reseed fresh',danger:true,action:()=>promptNuke()},
 ];
 let cpEl=null;
