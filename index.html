@@ -659,8 +659,14 @@ async function boot(){
     $('#lgGo').disabled=true;
   }
   const sess=await kvGet('session');
+  // Refresh the shared account list before login so users added on another device
+  // can sign in on a fresh machine (skip if already signed in — enterApp syncs).
+  const signedIn=sess&&sess.exp>Date.now()&&(ST.users.find(u=>u.username===sess.u)||sess.local);
+  if(!signedIn&&ST.cfg.getUrl&&ST.cfg.key){
+    try{await pullUsers()}catch(e){console.warn('pre-login user refresh failed',e)}
+  }
   if(!ST.users.length)$('#lgErr').textContent='Could not load accounts — check that seed/users.json deployed with the app.';
-  if(sess&&sess.exp>Date.now()&&(ST.users.find(u=>u.username===sess.u)||sess.local)){ST.session=sess;enterApp()}
+  if(signedIn){ST.session=sess;enterApp()}
 }
 async function doLogin(){
   const un=$('#lgU').value.trim().toLowerCase(),pw=$('#lgP').value;
@@ -749,6 +755,20 @@ async function syncNow(silentOk){
     toast('Sync failed: '+(e.message||e),1);
   }finally{
     ST.busy=false;ST.pending=(await qAll()).filter(o=>!o.done).length;syncChip();
+  }
+}
+// Lightweight users-only refresh used at boot, before login, so accounts added
+// on another device are recognized on a fresh machine (login can't happen for a
+// user who isn't in ST.users, and a full pullData()/render() can't run pre-login).
+async function pullUsers(){
+  if(!ST.cfg.getUrl||!ST.cfg.key)return;
+  const url=ST.cfg.getUrl+(ST.cfg.getUrl.includes('?')?'&':'?')+'k='+encodeURIComponent(ST.cfg.key);
+  const r=await fetch(url);if(!r.ok)throw new Error('Read endpoint returned '+r.status);
+  const j=await r.json();if(!j||j.ok===false)throw new Error('Read endpoint rejected the key');
+  if(Array.isArray(j.users)&&j.users.length){
+    const locals=ST.users.filter(u=>u.local&&!j.users.some(s=>s.username===u.username));
+    ST.users=j.users.map(u=>({username:u.username,display:u.display||u.username,role:u.role||'auditor',salt:u.salt,hash:u.hash,active:u.active??'Yes'})).concat(locals);
+    await kvSet('users',ST.users);
   }
 }
 async function pullData(){
@@ -1586,6 +1606,8 @@ function surveyRow(g){
     <div class="srow-desc">${esc(mt.desc)}</div></div>`;
 }
 function renderSurveys(m){
+  const sqEl=document.activeElement;
+  const sqFocus=sqEl&&sqEl.id==='sq'?{start:sqEl.selectionStart,end:sqEl.selectionEnd}:null;
   const f=ST.sflt;
   const rows=[];
   for(const g of ST.surveyGroups.values()){
@@ -1637,6 +1659,7 @@ function renderSurveys(m){
   <div id="slist">${list.slice(0,max).map(surveyRow).join('')||'<div class="note">No surveys match these filters.</div>'}</div>`;
   const run=()=>{ST.sflt.q=$('#sq').value;renderSurveys(m)};
   $('#sq').addEventListener('input',debounce(run,200));
+  if(sqFocus){const sq=$('#sq');sq.focus();sq.setSelectionRange(sqFocus.start,sqFocus.end)}
   $('#sqClear').onclick=()=>{ST.sflt.q='';renderSurveys(m)};
   m.querySelectorAll('[data-scat]').forEach(b=>b.onclick=()=>{ST.sflt.cat=b.dataset.scat;renderSurveys(m)});
   m.querySelectorAll('[data-sact]').forEach(b=>b.onclick=()=>{ST.sflt.act=ST.sflt.act===b.dataset.sact?'':b.dataset.sact;renderSurveys(m)});
@@ -1865,6 +1888,8 @@ function auctionGroups(includeArc){
   return out;
 }
 function renderAuctions(m){
+  const aqEl=document.activeElement;
+  const aqFocus=aqEl&&aqEl.id==='aq'?{start:aqEl.selectionStart,end:aqEl.selectionEnd}:null;
   const f=ST.aflt;
   let rows=auctionGroups(f.arc);
   const open=rows.filter(g=>surveyMeta(g).open),done=rows.length-open.length;
@@ -1900,6 +1925,7 @@ function renderAuctions(m){
   <div id="slist">${rows.slice(0,max).map(surveyRow).join('')||'<div class="note">No auction surveys match these filters.</div>'}</div>`;
   const run=()=>{ST.aflt.q=$('#aq').value;renderAuctions(m)};
   $('#aq').addEventListener('input',debounce(run,200));
+  if(aqFocus){const aq=$('#aq');aq.focus();aq.setSelectionRange(aqFocus.start,aqFocus.end)}
   $('#aqClear').onclick=()=>{ST.aflt.q='';renderAuctions(m)};
   m.querySelectorAll('[data-ast]').forEach(b=>b.onclick=()=>{ST.aflt.st=ST.aflt.st===b.dataset.ast?'':b.dataset.ast;renderAuctions(m)});
   $('#aArc').onclick=async()=>{
